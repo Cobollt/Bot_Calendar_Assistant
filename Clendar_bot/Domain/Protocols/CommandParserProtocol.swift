@@ -2,5 +2,5 @@ import Foundation
 
 
 protocol CommandParserProtocol {
-    func parce(_ command: VoiceCommand) throws -> CalendarEvent
+    func parse(_ command: VoiceCommand) throws -> CalendarEvent
 }

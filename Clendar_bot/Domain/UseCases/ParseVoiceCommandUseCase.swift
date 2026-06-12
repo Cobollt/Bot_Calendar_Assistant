@@ -6,6 +6,6 @@ final class ParseVoiceCommandUseCase{
     }
     
     func execute(_ command: VoiceCommand) throws -> CalendarEvent {
-        try commandParser.parce(command)
+        try commandParser.parse(command)
     }
 }

@@ -1,50 +1,100 @@
 import Foundation
+import Combine
 
 @MainActor
 final class HomeViewModel: ObservableObject {
 
     @Published var recognizedText = ""
-
-    @Published var statusMessage = ""
-
+    @Published var statusMessage = "Готов к работе"
     @Published var isProcessing = false
 
-    private let requestCalendarAccessUseCase:
-        RequestCalendarAccessUseCase
-
-    private let startVoiceRecognitionUseCase:
-        StartVoiceRecognitionUseCase
-
-    private let parseVoiceCommandUseCase:
-        ParseVoiceCommandUseCase
-
-    private let createCalendarEventUseCase:
-        CreateCalendarEventUseCase
+    private let requestCalendarAccessUseCase: RequestCalendarAccessUseCase
+    private let startVoiceRecognitionUseCase: StartVoiceRecognitionUseCase
+    private let parseVoiceCommandUseCase: ParseVoiceCommandUseCase
+    private let createCalendarEventUseCase: CreateCalendarEventUseCase
 
     init(
-        requestCalendarAccessUseCase:
-            RequestCalendarAccessUseCase,
-
-        startVoiceRecognitionUseCase:
-            StartVoiceRecognitionUseCase,
-
-        parseVoiceCommandUseCase:
-            ParseVoiceCommandUseCase,
-
-        createCalendarEventUseCase:
-            CreateCalendarEventUseCase
+        requestCalendarAccessUseCase: RequestCalendarAccessUseCase,
+        startVoiceRecognitionUseCase: StartVoiceRecognitionUseCase,
+        parseVoiceCommandUseCase: ParseVoiceCommandUseCase,
+        createCalendarEventUseCase: CreateCalendarEventUseCase
     ) {
+        self.requestCalendarAccessUseCase = requestCalendarAccessUseCase
+        self.startVoiceRecognitionUseCase = startVoiceRecognitionUseCase
+        self.parseVoiceCommandUseCase = parseVoiceCommandUseCase
+        self.createCalendarEventUseCase = createCalendarEventUseCase
+    }
 
-        self.requestCalendarAccessUseCase =
-            requestCalendarAccessUseCase
+    func requestCalendarAccess() async {
+        do {
+            statusMessage = "Запрашиваю доступ к календарю..."
 
-        self.startVoiceRecognitionUseCase =
-            startVoiceRecognitionUseCase
+            let granted = try await requestCalendarAccessUseCase.execute()
 
-        self.parseVoiceCommandUseCase =
-            parseVoiceCommandUseCase
+            statusMessage = granted
+                ? "Доступ к календарю получен"
+                : "Доступ к календарю запрещён"
+        } catch {
+            statusMessage = makeErrorMessage(from: error)
+        }
+    }
 
-        self.createCalendarEventUseCase =
-            createCalendarEventUseCase
+    func processVoiceCommand() async {
+        isProcessing = true
+        defer { isProcessing = false }
+
+        do {
+            statusMessage = "Получаю команду..."
+
+            let command = try await startVoiceRecognitionUseCase.execute()
+            recognizedText = command.rawText
+
+            statusMessage = "Разбираю команду..."
+
+            let event = try parseVoiceCommandUseCase.execute(command)
+
+            statusMessage = "Создаю событие..."
+
+            try await createCalendarEventUseCase.execute(event)
+
+            statusMessage = "Событие добавлено в календарь"
+        } catch {
+            statusMessage = makeErrorMessage(from: error)
+        }
+    }
+
+    private func makeErrorMessage(from error: Error) -> String {
+        switch error {
+
+        case CalendarError.accessDenied:
+            return "Нет доступа к календарю"
+
+        case CalendarError.calendarNotFound:
+            return "iCloud-календарь не найден"
+
+        case CalendarError.eventSaveFailed:
+            return "Не удалось сохранить событие"
+
+        case ParserError.emptyCommand:
+            return "Команда пустая"
+
+        case ParserError.invalidDate:
+            return "Не удалось определить дату"
+
+        case ParserError.emptyTitle:
+            return "Не удалось определить название события"
+
+        case SpeechError.microphoneAccessDenied:
+            return "Нет доступа к микрофону"
+
+        case SpeechError.speechRecognitionDenied:
+            return "Нет доступа к распознаванию речи"
+
+        case SpeechError.recognitionFailed:
+            return "Не удалось распознать речь"
+
+        default:
+            return "Произошла неизвестная ошибка"
+        }
     }
 }

@@ -4,13 +4,24 @@ final class CommandParserService: CommandParserProtocol {
 
     func parse(_ command: VoiceCommand) throws -> CalendarEvent {
         let text = command.rawText.lowercased()
+        
+        guard !text.isEmpty else {
+                throw ParserError.emptyCommand
+            }
 
         let startDate = try extractDate(from: text)
-        let endDate = startDate.addingTimeInterval(AppConstants.defaultReminderMinutes * AppConstants.defaultEventDurationMinutes)
+        let endDate = startDate.addingTimeInterval(
+            TimeInterval(AppConstants.defaultEventDurationMinutes * 60)
+        )
 
         let title = extractTitle(from: text)
+        
+        guard !title.isEmpty else {
+                throw ParserError.emptyTitle
+            }
 
         return CalendarEvent(
+            id: UUID(),
             title: title,
             startDate: startDate,
             endDate: endDate,
@@ -34,7 +45,9 @@ final class CommandParserService: CommandParserProtocol {
     private func setTime(for date: Date, from text: String) -> Date {
         let calendar = Calendar.current
 
-        let hour = AppConstants.defaultEventHour
+        let hour =
+            extractHour(from: text)
+            ?? AppConstants.defaultEventHour
 
         var components = calendar.dateComponents([.year, .month, .day], from: date)
         components.hour = hour

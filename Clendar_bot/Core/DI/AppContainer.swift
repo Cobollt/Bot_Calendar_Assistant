@@ -1,45 +1,52 @@
 import Foundation
 
 final class AppContainer {
-
+    
     // MARK: Services
-
+    
     lazy var eventKitCalendarService =
-        EventKitCalendarService()
-
+    EventKitCalendarService()
+    
     lazy var speechRecognitionService =
-        SpeechRecognitionService()
-
+    SpeechRecognitionService()
+    
     lazy var commandParserService =
-        CommandParserService()
-
+    CommandParserService()
+    
     // MARK: Repository
-
+    
     lazy var calendarRepository =
-        ICloudCalendarRepository(
-            calendarService: eventKitCalendarService
-        )
-
+    ICloudCalendarRepository(
+        calendarService: eventKitCalendarService
+    )
+    
     // MARK: UseCases
-
+    
     lazy var requestCalendarAccessUseCase =
-        RequestCalendarAccessUseCase(
-            calendarRepository: calendarRepository
-        )
-
+    RequestCalendarAccessUseCase(
+        calendarRepository: calendarRepository
+    )
+    
     lazy var startVoiceRecognitionUseCase =
-        StartVoiceRecognitionUseCase(
-            speechRecognizer: speechRecognitionService
-        )
-
+    StartVoiceRecognitionUseCase(
+        speechRecognizer: speechRecognitionService
+    )
+    
     lazy var parseVoiceCommandUseCase =
-        ParseVoiceCommandUseCase(
-            commandParser: commandParserService
-        )
-
+    ParseVoiceCommandUseCase(
+        commandParser: commandParserService
+    )
+    
     lazy var createCalendarEventUseCase =
-        CreateCalendarEventUseCase(
-            calendarRepository: calendarRepository
+    CreateCalendarEventUseCase(
+        calendarRepository: calendarRepository
+    )
+    func makeHomeViewModel() -> HomeViewModel {
+        HomeViewModel(
+            requestCalendarAccessUseCase: requestCalendarAccessUseCase,
+            startVoiceRecognitionUseCase: startVoiceRecognitionUseCase,
+            parseVoiceCommandUseCase: parseVoiceCommandUseCase,
+            createCalendarEventUseCase: createCalendarEventUseCase
         )
-    func makeHomeViewModel() -> HomeViewModel
+    }
 }
