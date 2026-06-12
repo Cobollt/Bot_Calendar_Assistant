@@ -29,7 +29,7 @@ func requestAccess() async throws -> Bool {
     private func findICloudCalendar() -> EKCalendar? {
         eventStore.calendars(for: .event).first {
             $0.source.sourceType == .calDAV &&
-            $0.source.title.lowercased().contains("iCloud")
+            $0.source.title.lowercased().contains("icloud")
         }
     }
 }

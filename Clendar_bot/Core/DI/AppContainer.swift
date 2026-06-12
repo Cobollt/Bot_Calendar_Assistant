@@ -41,5 +41,5 @@ final class AppContainer {
         CreateCalendarEventUseCase(
             calendarRepository: calendarRepository
         )
-
+    func makeHomeViewModel() -> HomeViewModel
 }
