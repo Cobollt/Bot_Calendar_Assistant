@@ -6,7 +6,7 @@ final class CommandParserService: CommandParserProtocol {
         let text = command.rawText.lowercased()
 
         let startDate = try extractDate(from: text)
-        let endDate = startDate.addingTimeInterval(30 * 60)
+        let endDate = startDate.addingTimeInterval(AppConstants.defaultReminderMinutes * AppConstants.defaultEventDurationMinutes)
 
         let title = extractTitle(from: text)
 
@@ -15,7 +15,7 @@ final class CommandParserService: CommandParserProtocol {
             startDate: startDate,
             endDate: endDate,
             notes: command.rawText,
-            reminder: Reminder(minutesBefore: 30)
+            reminder: Reminder(minutesBefore: AppConstants.defaultReminderMinutes)
         )
     }
 
@@ -34,7 +34,7 @@ final class CommandParserService: CommandParserProtocol {
     private func setTime(for date: Date, from text: String) -> Date {
         let calendar = Calendar.current
 
-        let hour = extractHour(from: text) ?? 9
+        let hour = AppConstants.defaultEventHour
 
         var components = calendar.dateComponents([.year, .month, .day], from: date)
         components.hour = hour
@@ -67,5 +67,6 @@ final class CommandParserService: CommandParserProtocol {
             .replacingOccurrences(of: "завтра", with: "")
             .replacingOccurrences(of: "сегодня", with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
+        
     }
 }
