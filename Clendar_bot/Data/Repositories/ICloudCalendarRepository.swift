@@ -1,7 +1,18 @@
-//
-//  ICloudCalendarRepository.swift
-//  Clendar_bot
-//
-//  Created by Design Yousupova on 11.06.2026.
-//
+import Foundation
 
+final class ICloudCalendarRepository: CalendarRepositoryProtocol {
+
+    private let calendarService: EventKitCalendarService
+
+    init(calendarService: EventKitCalendarService) {
+        self.calendarService = calendarService
+    }
+
+    func requestAccess() async throws -> Bool {
+        try await calendarService.requestAccess()
+    }
+
+    func createEvent(_ event: CalendarEvent) async throws {
+        try calendarService.createEvent(event)
+    }
+}

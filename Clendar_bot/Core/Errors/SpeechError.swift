@@ -1,7 +1,7 @@
-//
-//  SpeechError.swift
-//  Clendar_bot
-//
-//  Created by Design Yousupova on 11.06.2026.
-//
+import Foundation
 
+enum SpeechError: Error {
+    case microphoneAccessDenied
+    case speechRecognitionDenied
+    case recognitionFailed
+}

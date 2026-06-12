@@ -1,7 +1,7 @@
-//
-//  CalendarError.swift
-//  Clendar_bot
-//
-//  Created by Design Yousupova on 11.06.2026.
-//
+import Foundation
 
+enum CalendarError: Error {
+    case accessDenied
+    case calendarNotFound
+    case eventSaveFailed
+}

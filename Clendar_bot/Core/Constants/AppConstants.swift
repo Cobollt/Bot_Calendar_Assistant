@@ -1,7 +1,10 @@
-//
-//  AppConstants.swift
-//  Clendar_bot
-//
-//  Created by Design Yousupova on 11.06.2026.
-//
+import Foundation
 
+enum AppConstants {
+
+    static let defaultReminderMinutes = 30
+
+    static let defaultEventDurationMinutes = 60
+
+    static let defaultEventHour = 9
+}

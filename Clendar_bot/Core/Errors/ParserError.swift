@@ -1,7 +1,8 @@
-//
-//  ParserError.swift
-//  Clendar_bot
-//
-//  Created by Design Yousupova on 11.06.2026.
-//
+import Foundation
 
+enum ParserError: Error {
+    case emptyCommand
+    case invalidDate
+    case invalidTime
+    case emptyTitle
+}
