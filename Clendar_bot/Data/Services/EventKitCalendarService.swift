@@ -10,6 +10,10 @@ func requestAccess() async throws -> Bool {
     func createEvent(_ event: CalendarEvent) throws {
         let ekEvent = EKEvent(eventStore: eventStore)
         
+        guard hasCalendarAccess() else {
+            throw CalendarError.accessDenied
+        }
+        
         ekEvent.title = event.title
         ekEvent.startDate = event.startDate
         ekEvent.endDate = event.endDate
@@ -30,6 +34,16 @@ func requestAccess() async throws -> Bool {
         eventStore.calendars(for: .event).first {
             $0.source.sourceType == .calDAV &&
             $0.source.title.lowercased().contains("icloud")
+        }
+    }
+    
+    func hasCalendarAccess() -> Bool {
+        let status = EKEventStore.authorizationStatus(for: .event)
+
+        if #available(iOS 17.0, *) {
+            return status == .fullAccess
+        } else {
+            return status == .authorized
         }
     }
 }

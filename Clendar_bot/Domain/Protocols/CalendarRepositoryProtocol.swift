@@ -3,5 +3,6 @@ import Foundation
 
 protocol CalendarRepositoryProtocol {
     func requestAccess() async throws -> Bool
+    func hasCalendarAccess() -> Bool
     func createEvent(_ event: CalendarEvent) async throws
 }

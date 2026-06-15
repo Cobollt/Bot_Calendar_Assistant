@@ -7,6 +7,7 @@ final class HomeViewModel: ObservableObject {
     @Published var recognizedText = ""
     @Published var statusMessage = "Готов к работе"
     @Published var isProcessing = false
+    @Published var hasCalendarAccess = false
 
     private let requestCalendarAccessUseCase: RequestCalendarAccessUseCase
     private let startVoiceRecognitionUseCase: StartVoiceRecognitionUseCase
@@ -34,6 +35,7 @@ final class HomeViewModel: ObservableObject {
             statusMessage = granted
                 ? "Доступ к календарю получен"
                 : "Доступ к календарю запрещён"
+            hasCalendarAccess = granted
         } catch {
             statusMessage = makeErrorMessage(from: error)
         }
@@ -42,6 +44,11 @@ final class HomeViewModel: ObservableObject {
     func processVoiceCommand() async {
         isProcessing = true
         defer { isProcessing = false }
+        
+        guard hasCalendarAccess else {
+            statusMessage = "Сначала разрешите доступ к календарю"
+            return
+        }
 
         do {
             statusMessage = "Получаю команду..."

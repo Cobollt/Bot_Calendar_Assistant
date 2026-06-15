@@ -15,4 +15,8 @@ final class ICloudCalendarRepository: CalendarRepositoryProtocol {
     func createEvent(_ event: CalendarEvent) async throws {
         try calendarService.createEvent(event)
     }
+    
+    func hasCalendarAccess() -> Bool {
+        calendarService.hasCalendarAccess()
+    }
 }
