@@ -8,7 +8,8 @@ struct CalendarBotApp: App {
     var body: some Scene {
         WindowGroup {
             HomeView(
-                viewModel: container.makeHomeViewModel()
+                viewModel: container.makeHomeViewModel(),
+                settingsViewModel: container.makeSettingsViewModel()
             )
         }
     }
