@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import EventKit
 
 @MainActor
 final class HomeViewModel: ObservableObject {
@@ -9,61 +10,45 @@ final class HomeViewModel: ObservableObject {
     @Published var isProcessing = false
     @Published var hasCalendarAccess = false
 
-    private let requestCalendarAccessUseCase: RequestCalendarAccessUseCase
     private let startVoiceRecognitionUseCase: StartVoiceRecognitionUseCase
     private let parseVoiceCommandUseCase: ParseVoiceCommandUseCase
     private let createCalendarEventUseCase: CreateCalendarEventUseCase
 
     init(
-        requestCalendarAccessUseCase: RequestCalendarAccessUseCase,
         startVoiceRecognitionUseCase: StartVoiceRecognitionUseCase,
         parseVoiceCommandUseCase: ParseVoiceCommandUseCase,
         createCalendarEventUseCase: CreateCalendarEventUseCase
     ) {
-        self.requestCalendarAccessUseCase = requestCalendarAccessUseCase
         self.startVoiceRecognitionUseCase = startVoiceRecognitionUseCase
         self.parseVoiceCommandUseCase = parseVoiceCommandUseCase
         self.createCalendarEventUseCase = createCalendarEventUseCase
-        hasCalendarAccess =
-        calendarRepository.hasCalendarAccess()
-        
+
+        refreshCalendarAccess()
     }
 
-    func requestCalendarAccess() async {
-        
-        guard hasCalendarAccess else {
-            
-            statusMessage =
-            "Сначала разрешите доступ к календарю."
+    func refreshCalendarAccess() {
+        let status = EKEventStore.authorizationStatus(for: .event)
 
-            return
-        }
-            
-        do {
-            statusMessage = "Запрашиваю доступ к календарю..."
-
-            let granted = try await requestCalendarAccessUseCase.execute()
-
-            statusMessage = granted
-                ? "Доступ к календарю получен"
-                : "Доступ к календарю запрещён"
-            hasCalendarAccess = granted
-        } catch {
-            statusMessage = makeErrorMessage(from: error)
+        if #available(iOS 17.0, *) {
+            hasCalendarAccess = status == .fullAccess
+        } else {
+            hasCalendarAccess = status == .authorized
         }
     }
 
     func processVoiceCommand() async {
-        isProcessing = true
-        defer { isProcessing = false }
-        
+        refreshCalendarAccess()
+
         guard hasCalendarAccess else {
-            statusMessage = "Сначала разрешите доступ к календарю"
+            statusMessage = "Сначала разрешите доступ к календарю в настройках."
             return
         }
 
+        isProcessing = true
+        defer { isProcessing = false }
+
         do {
-            statusMessage = "Получаю команду..."
+            statusMessage = "Слушаю..."
 
             let command = try await startVoiceRecognitionUseCase.execute()
             recognizedText = command.rawText
@@ -89,7 +74,7 @@ final class HomeViewModel: ObservableObject {
             return "Нет доступа к календарю"
 
         case CalendarError.calendarNotFound:
-            return "iCloud-календарь не найден"
+            return "Календарь не найден"
 
         case CalendarError.eventSaveFailed:
             return "Не удалось сохранить событие"

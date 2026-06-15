@@ -45,33 +45,53 @@ final class CommandParserService: CommandParserProtocol {
     private func setTime(for date: Date, from text: String) -> Date {
         let calendar = Calendar.current
 
-        let hour =
-            extractHour(from: text)
-            ?? AppConstants.defaultEventHour
+        let parsedTime = extractHourAndMinute(from: text)
 
         var components = calendar.dateComponents([.year, .month, .day], from: date)
-        components.hour = hour
-        components.minute = 0
+        components.hour = parsedTime?.hour ?? AppConstants.defaultEventHour
+        components.minute = parsedTime?.minute ?? 0
 
         return calendar.date(from: components) ?? date
     }
 
-    private func extractHour(from text: String) -> Int? {
-        let pattern = #"в\s?(\d{1,2})"#
+    private func extractHourAndMinute(from text: String) -> (hour: Int, minute: Int)? {
+        let patterns = [
+            #"(?i)(?:в|на)\s+(\d{1,2})[:.](\d{2})"#,
+            #"(?i)(?:в|на)\s+(\d{1,2})"#,
+            #"(?i)завтра\s+(\d{1,2})[:.](\d{2})"#,
+            #"(?i)завтра\s+(\d{1,2})"#
+        ]
 
-        guard let regex = try? NSRegularExpression(pattern: pattern),
-              let match = regex.firstMatch(
-                in: text,
-                range: NSRange(text.startIndex..., in: text)
-              ),
-              let range = Range(match.range(at: 1), in: text)
-        else {
-            return nil
+        for pattern in patterns {
+            guard let regex = try? NSRegularExpression(pattern: pattern),
+                  let match = regex.firstMatch(
+                    in: text,
+                    range: NSRange(text.startIndex..., in: text)
+                  ),
+                  let hourRange = Range(match.range(at: 1), in: text),
+                  let hour = Int(text[hourRange]),
+                  hour >= 0,
+                  hour <= 23
+            else {
+                continue
+            }
+
+            var minute = 0
+
+            if match.numberOfRanges > 2,
+               let minuteRange = Range(match.range(at: 2), in: text),
+               let parsedMinute = Int(text[minuteRange]),
+               parsedMinute >= 0,
+               parsedMinute <= 59 {
+                minute = parsedMinute
+            }
+
+            return (hour, minute)
         }
 
-        return Int(text[range])
+        return nil
     }
-
+    
     private func extractTitle(from text: String) -> String {
         text
             .replacingOccurrences(of: "напомни", with: "")
