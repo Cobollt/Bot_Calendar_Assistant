@@ -62,7 +62,11 @@ struct HomeView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(viewModel.isProcessing)
+                .disabled(
+                    viewModel.isProcessing
+                    ||
+                    !viewModel.hasCalendarAccess
+                )
             }
 
             Spacer()

@@ -24,9 +24,21 @@ final class HomeViewModel: ObservableObject {
         self.startVoiceRecognitionUseCase = startVoiceRecognitionUseCase
         self.parseVoiceCommandUseCase = parseVoiceCommandUseCase
         self.createCalendarEventUseCase = createCalendarEventUseCase
+        hasCalendarAccess =
+        calendarRepository.hasCalendarAccess()
+        
     }
 
     func requestCalendarAccess() async {
+        
+        guard hasCalendarAccess else {
+            
+            statusMessage =
+            "Сначала разрешите доступ к календарю."
+
+            return
+        }
+            
         do {
             statusMessage = "Запрашиваю доступ к календарю..."
 

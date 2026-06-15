@@ -22,6 +22,13 @@ final class EventKitCalendarService {
         
         let ekEvent = EKEvent(eventStore: eventStore)
         
+        guard let calendar = findWritableCalendar()
+        else {
+            throw CalendarError.calendarNotFound
+        }
+
+        ekEvent.calendar = calendar
+        
         ekEvent.title = event.title
         ekEvent.startDate = event.startDate
         ekEvent.endDate = event.endDate
@@ -32,7 +39,20 @@ final class EventKitCalendarService {
             ekEvent.addAlarm(alarm)
         }
         
-        try eventStore.save(ekEvent, span: .thisEvent)
+        do {
+
+            try eventStore.save(
+                ekEvent,
+                span: .thisEvent
+            )
+
+        }
+
+        catch {
+
+            throw CalendarError.eventSaveFailed
+
+        }
     }
     
     private func findICloudCalendar() -> EKCalendar? {
