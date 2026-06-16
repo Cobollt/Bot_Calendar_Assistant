@@ -9,6 +9,39 @@ struct SettingsView: View {
     }
 
     var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Настройки события")
+                .font(.headline)
+
+            Stepper(
+                "Напоминание: \(viewModel.defaultReminderMinutes) мин.",
+                value: $viewModel.defaultReminderMinutes,
+                in: 0...180,
+                step: 5
+            )
+
+            Stepper(
+                "Длительность: \(viewModel.defaultEventDurationMinutes) мин.",
+                value: $viewModel.defaultEventDurationMinutes,
+                in: 15...240,
+                step: 15
+            )
+
+            Stepper(
+                "Время по умолчанию: \(viewModel.defaultEventHour):00",
+                value: $viewModel.defaultEventHour,
+                in: 0...23
+            )
+
+            Button("Сохранить настройки") {
+                viewModel.saveSettings()
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding()
+        .background(Color.gray.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        
         VStack(spacing: 24) {
 
             Text("Настройки")
@@ -47,6 +80,26 @@ struct SettingsView: View {
             .buttonStyle(.borderedProminent)
             .disabled(viewModel.hasCalendarAccess)
 
+            Button {
+
+                viewModel.openSettings()
+
+            }
+
+            label: {
+
+                Text(
+                    "Управление разрешениями"
+                )
+
+                .frame(maxWidth: .infinity)
+
+            }
+
+            .buttonStyle(
+                .borderedProminent
+            )
+            
             Text(viewModel.statusMessage)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -55,7 +108,7 @@ struct SettingsView: View {
         }
         .padding()
         .onAppear {
-            viewModel.refreshAccessStates()
+            viewModel.refreshPermissions()
         }
     }
 

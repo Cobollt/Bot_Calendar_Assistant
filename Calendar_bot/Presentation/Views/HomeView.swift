@@ -32,12 +32,36 @@ struct HomeView: View {
                 .background(Color.gray.opacity(0.12))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                Text(viewModel.statusMessage)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+                if let event = viewModel.eventPreview {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Я понял команду так:")
+                            .font(.headline)
 
-                if viewModel.isProcessing {
-                    ProgressView()
+                        Text("📌 \(event.title)")
+                        Text("📅 \(event.date)")
+                        Text("🕒 \(event.time)")
+                        Text("🔔 \(event.reminder)")
+
+                        HStack {
+                            Button("Отмена") {
+                                viewModel.cancelPendingEvent()
+                            }
+                            .buttonStyle(.bordered)
+
+                            Spacer()
+
+                            Button("Создать событие") {
+                                Task {
+                                    await viewModel.confirmEventCreation()
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                        }
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.gray.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
 
                 Button {
@@ -57,6 +81,14 @@ struct HomeView: View {
                     viewModel.isProcessing ||
                     !viewModel.hasCalendarAccess
                 )
+                
+                Button {
+                    viewModel.openCalendar()
+                } label: {
+                    Text("Открыть календарь")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
 
                 if !viewModel.hasCalendarAccess {
                     Text("Доступ к календарю нужно выдать в настройках.")
@@ -79,7 +111,7 @@ struct HomeView: View {
                 }
             }
             .onAppear {
-                viewModel.refreshCalendarAccess()
+                viewModel.refreshPermissions()
             }
         }
     }

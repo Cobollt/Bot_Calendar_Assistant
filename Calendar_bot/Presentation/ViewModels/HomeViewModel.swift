@@ -1,6 +1,5 @@
 import Foundation
 import Combine
-import EventKit
 
 @MainActor
 final class HomeViewModel: ObservableObject {
@@ -10,34 +9,42 @@ final class HomeViewModel: ObservableObject {
     @Published var isProcessing = false
     @Published var hasCalendarAccess = false
 
+    @Published var pendingEvent: CalendarEvent?
+    @Published var eventPreview: EventPresentation?
+
+    private let checkPermissionsUseCase: CheckPermissionsUseCase
     private let startVoiceRecognitionUseCase: StartVoiceRecognitionUseCase
     private let parseVoiceCommandUseCase: ParseVoiceCommandUseCase
     private let createCalendarEventUseCase: CreateCalendarEventUseCase
+    private let openCalendarUseCase: OpenCalendarUseCase
 
     init(
+        checkPermissionsUseCase: CheckPermissionsUseCase,
         startVoiceRecognitionUseCase: StartVoiceRecognitionUseCase,
         parseVoiceCommandUseCase: ParseVoiceCommandUseCase,
-        createCalendarEventUseCase: CreateCalendarEventUseCase
+        createCalendarEventUseCase: CreateCalendarEventUseCase,
+        openCalendarUseCase: OpenCalendarUseCase
     ) {
+        self.checkPermissionsUseCase = checkPermissionsUseCase
         self.startVoiceRecognitionUseCase = startVoiceRecognitionUseCase
         self.parseVoiceCommandUseCase = parseVoiceCommandUseCase
         self.createCalendarEventUseCase = createCalendarEventUseCase
+        self.openCalendarUseCase = openCalendarUseCase
 
-        refreshCalendarAccess()
+        refreshPermissions()
+    }
+    
+    func openCalendar() {
+        openCalendarUseCase.execute()
     }
 
-    func refreshCalendarAccess() {
-        let status = EKEventStore.authorizationStatus(for: .event)
-
-        if #available(iOS 17.0, *) {
-            hasCalendarAccess = status == .fullAccess
-        } else {
-            hasCalendarAccess = status == .authorized
-        }
+    func refreshPermissions() {
+        let permissions = checkPermissionsUseCase.execute()
+        hasCalendarAccess = permissions.hasCalendarAccess
     }
 
     func processVoiceCommand() async {
-        refreshCalendarAccess()
+        refreshPermissions()
 
         guard hasCalendarAccess else {
             statusMessage = "Сначала разрешите доступ к календарю в настройках."
@@ -57,48 +64,43 @@ final class HomeViewModel: ObservableObject {
 
             let event = try parseVoiceCommandUseCase.execute(command)
 
+            pendingEvent = event
+            eventPreview = EventPresentationMapper.map(event)
+
+            statusMessage = "Проверьте событие перед созданием"
+        } catch {
+            statusMessage = ErrorMessageMapper.map(error)
+        }
+    }
+
+    func confirmEventCreation() async {
+        guard let event = pendingEvent else {
+            statusMessage = "Нет события для создания"
+            return
+        }
+
+        isProcessing = true
+        defer { isProcessing = false }
+
+        do {
             statusMessage = "Создаю событие..."
 
             try await createCalendarEventUseCase.execute(event)
 
             statusMessage = "Событие добавлено в календарь"
+
+            pendingEvent = nil
+            eventPreview = nil
+            recognizedText = ""
         } catch {
-            statusMessage = makeErrorMessage(from: error)
+            statusMessage = ErrorMessageMapper.map(error)
         }
     }
 
-    private func makeErrorMessage(from error: Error) -> String {
-        switch error {
-
-        case CalendarError.accessDenied:
-            return "Нет доступа к календарю"
-
-        case CalendarError.calendarNotFound:
-            return "Календарь не найден"
-
-        case CalendarError.eventSaveFailed:
-            return "Не удалось сохранить событие"
-
-        case ParserError.emptyCommand:
-            return "Команда пустая"
-
-        case ParserError.invalidDate:
-            return "Не удалось определить дату"
-
-        case ParserError.emptyTitle:
-            return "Не удалось определить название события"
-
-        case SpeechError.microphoneAccessDenied:
-            return "Нет доступа к микрофону"
-
-        case SpeechError.speechRecognitionDenied:
-            return "Нет доступа к распознаванию речи"
-
-        case SpeechError.recognitionFailed:
-            return "Не удалось распознать речь"
-
-        default:
-            return "Произошла неизвестная ошибка"
-        }
+    func cancelPendingEvent() {
+        pendingEvent = nil
+        eventPreview = nil
+        recognizedText = ""
+        statusMessage = "Создание события отменено"
     }
 }

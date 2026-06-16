@@ -1,60 +1,107 @@
 import Foundation
 
 final class AppContainer {
-
+    
     // MARK: - Services
-
+    
     lazy var eventKitCalendarService =
-        EventKitCalendarService()
-
+    EventKitCalendarService()
+    
     lazy var speechRecognitionService =
-        SpeechRecognitionService()
-
+    SpeechRecognitionService()
+    
     lazy var commandParserService =
-        CommandParserService()
-
+    CommandParserService(
+        settingsService: settingsService
+    )
+    
+    lazy var calendarOpenerService =
+    CalendarOpenerService()
+    
+    lazy var settingsService =
+    SettingsService()
+    
+    lazy var permissionService =
+    PermissionService()
+    
+    lazy var settingsOpenerService =
+    SettingsOpenerService()
+    
+    
     // MARK: - Repository
-
+    
     lazy var calendarRepository =
-        ICloudCalendarRepository(
-            calendarService: eventKitCalendarService
-        )
-
+    ICloudCalendarRepository(
+        calendarService: eventKitCalendarService
+    )
+    
     // MARK: - UseCases
-
+    
+    lazy var checkPermissionsUseCase =
+    CheckPermissionsUseCase(
+        permissionService: permissionService
+    )
+    
     lazy var requestCalendarAccessUseCase =
-        RequestCalendarAccessUseCase(
-            calendarRepository: calendarRepository
-        )
-
+    RequestCalendarAccessUseCase(
+        permissionService: permissionService
+    )
+    
     lazy var startVoiceRecognitionUseCase =
-        StartVoiceRecognitionUseCase(
-            speechRecognizer: speechRecognitionService
-        )
-
+    StartVoiceRecognitionUseCase(
+        speechRecognizer: speechRecognitionService
+    )
+    
     lazy var parseVoiceCommandUseCase =
-        ParseVoiceCommandUseCase(
-            commandParser: commandParserService
-        )
-
+    ParseVoiceCommandUseCase(
+        commandParser: commandParserService
+    )
+    
     lazy var createCalendarEventUseCase =
-        CreateCalendarEventUseCase(
-            calendarRepository: calendarRepository
-        )
-
+    CreateCalendarEventUseCase(
+        calendarRepository: calendarRepository
+    )
+    
+    lazy var getAppSettingsUseCase =
+    GetAppSettingsUseCase(
+        settingsService: settingsService
+    )
+    
+    lazy var saveAppSettingsUseCase =
+    SaveAppSettingsUseCase(
+        settingsService: settingsService
+    )
+    
+    lazy var openCalendarUseCase =
+    OpenCalendarUseCase(
+        calendarOpener: calendarOpenerService
+    )
+    
+    lazy var openSettingsUseCase =
+    OpenSettingsUseCase(
+        settingsOpener:
+            settingsOpenerService
+    )
+    
     // MARK: - ViewModels
-
+    
     func makeHomeViewModel() -> HomeViewModel {
         HomeViewModel(
+            checkPermissionsUseCase: checkPermissionsUseCase,
             startVoiceRecognitionUseCase: startVoiceRecognitionUseCase,
             parseVoiceCommandUseCase: parseVoiceCommandUseCase,
-            createCalendarEventUseCase: createCalendarEventUseCase
+            createCalendarEventUseCase: createCalendarEventUseCase,
+            openCalendarUseCase: openCalendarUseCase
         )
     }
-
+    
     func makeSettingsViewModel() -> SettingsViewModel {
         SettingsViewModel(
-            requestCalendarAccessUseCase: requestCalendarAccessUseCase
+            checkPermissionsUseCase: checkPermissionsUseCase,
+            requestCalendarAccessUseCase: requestCalendarAccessUseCase,
+            getAppSettingsUseCase: getAppSettingsUseCase,
+            saveAppSettingsUseCase: saveAppSettingsUseCase,
+            openSettingsUseCase: openSettingsUseCase
         )
     }
 }

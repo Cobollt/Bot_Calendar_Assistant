@@ -1,6 +1,12 @@
 import Foundation
 
 final class CommandParserService: CommandParserProtocol {
+    
+    private let settingsService: SettingsServiceProtocol
+
+    init(settingsService: SettingsServiceProtocol) {
+        self.settingsService = settingsService
+    }
 
     func parse(_ command: VoiceCommand) throws -> CalendarEvent {
         let text = command.rawText.lowercased()
@@ -8,10 +14,11 @@ final class CommandParserService: CommandParserProtocol {
         guard !text.isEmpty else {
                 throw ParserError.emptyCommand
             }
-
+        
+        let settings = settingsService.getSettings()
         let startDate = try extractDate(from: text)
         let endDate = startDate.addingTimeInterval(
-            TimeInterval(AppConstants.defaultEventDurationMinutes * 60)
+            TimeInterval(settings.defaultEventDurationMinutes * 60)
         )
 
         let title = extractTitle(from: text)
@@ -26,7 +33,7 @@ final class CommandParserService: CommandParserProtocol {
             startDate: startDate,
             endDate: endDate,
             notes: command.rawText,
-            reminder: Reminder(minutesBefore: AppConstants.defaultReminderMinutes)
+            reminder: Reminder(minutesBefore: settings.defaultReminderMinutes)
         )
     }
 
@@ -44,11 +51,11 @@ final class CommandParserService: CommandParserProtocol {
 
     private func setTime(for date: Date, from text: String) -> Date {
         let calendar = Calendar.current
-
+        let settings = settingsService.getSettings()
         let parsedTime = extractHourAndMinute(from: text)
 
         var components = calendar.dateComponents([.year, .month, .day], from: date)
-        components.hour = parsedTime?.hour ?? AppConstants.defaultEventHour
+        components.hour = parsedTime?.hour ?? settings.defaultEventHour
         components.minute = parsedTime?.minute ?? 0
 
         return calendar.date(from: components) ?? date

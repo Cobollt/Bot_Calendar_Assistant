@@ -1,6 +1,6 @@
 import Foundation
 
-final class RequestCalendarAccessUseCase {
+final class CheckPermissionsUseCase {
 
     private let permissionService: PermissionServiceProtocol
 
@@ -8,7 +8,7 @@ final class RequestCalendarAccessUseCase {
         self.permissionService = permissionService
     }
 
-    func execute() async throws -> Bool {
-        try await permissionService.requestCalendarAccess()
+    func execute() -> PermissionState {
+        permissionService.checkPermissions()
     }
 }

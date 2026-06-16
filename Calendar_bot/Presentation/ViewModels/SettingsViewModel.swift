@@ -1,8 +1,5 @@
 import Foundation
 import Combine
-import EventKit
-import Speech
-import AVFoundation
 
 @MainActor
 final class SettingsViewModel: ObservableObject {
@@ -12,19 +9,42 @@ final class SettingsViewModel: ObservableObject {
     @Published var hasSpeechAccess = false
     @Published var statusMessage = ""
 
+    @Published var defaultReminderMinutes = 30
+    @Published var defaultEventDurationMinutes = 60
+    @Published var defaultEventHour = 9
+
+    private let checkPermissionsUseCase: CheckPermissionsUseCase
     private let requestCalendarAccessUseCase: RequestCalendarAccessUseCase
+    private let getAppSettingsUseCase: GetAppSettingsUseCase
+    private let saveAppSettingsUseCase: SaveAppSettingsUseCase
+    private let openSettingsUseCase:
+    OpenSettingsUseCase
 
     init(
-        requestCalendarAccessUseCase: RequestCalendarAccessUseCase
+        checkPermissionsUseCase: CheckPermissionsUseCase,
+        requestCalendarAccessUseCase: RequestCalendarAccessUseCase,
+        getAppSettingsUseCase: GetAppSettingsUseCase,
+        saveAppSettingsUseCase: SaveAppSettingsUseCase,
+        openSettingsUseCase:
+        OpenSettingsUseCase
     ) {
+        self.checkPermissionsUseCase = checkPermissionsUseCase
         self.requestCalendarAccessUseCase = requestCalendarAccessUseCase
-        refreshAccessStates()
+        self.getAppSettingsUseCase = getAppSettingsUseCase
+        self.saveAppSettingsUseCase = saveAppSettingsUseCase
+        self.openSettingsUseCase =
+        openSettingsUseCase
+
+        refreshPermissions()
+        loadSettings()
     }
 
-    func refreshAccessStates() {
-        refreshCalendarAccess()
-        refreshMicrophoneAccess()
-        refreshSpeechAccess()
+    func refreshPermissions() {
+        let permissions = checkPermissionsUseCase.execute()
+
+        hasCalendarAccess = permissions.hasCalendarAccess
+        hasMicrophoneAccess = permissions.hasMicrophoneAccess
+        hasSpeechAccess = permissions.hasSpeechAccess
     }
 
     func requestCalendarAccess() async {
@@ -35,31 +55,35 @@ final class SettingsViewModel: ObservableObject {
             statusMessage = granted
                 ? "Доступ к календарю получен"
                 : "Доступ к календарю запрещён"
+
+            refreshPermissions()
         } catch {
             hasCalendarAccess = false
             statusMessage = "Не удалось получить доступ к календарю"
         }
     }
-
-    private func refreshCalendarAccess() {
-        let status = EKEventStore.authorizationStatus(for: .event)
-
-        if #available(iOS 17.0, *) {
-            hasCalendarAccess = status == .fullAccess
-        } else {
-            hasCalendarAccess = status == .authorized
-        }
+    
+    func openSettings() {
+        openSettingsUseCase.execute()
     }
 
-    private func refreshMicrophoneAccess() {
-        if #available(iOS 17.0, *) {
-            hasMicrophoneAccess = AVAudioApplication.shared.recordPermission == .granted
-        } else {
-            hasMicrophoneAccess = AVAudioSession.sharedInstance().recordPermission == .granted
-        }
+    func loadSettings() {
+        let settings = getAppSettingsUseCase.execute()
+
+        defaultReminderMinutes = settings.defaultReminderMinutes
+        defaultEventDurationMinutes = settings.defaultEventDurationMinutes
+        defaultEventHour = settings.defaultEventHour
     }
 
-    private func refreshSpeechAccess() {
-        hasSpeechAccess = SFSpeechRecognizer.authorizationStatus() == .authorized
+    func saveSettings() {
+        let settings = AppSettings(
+            defaultReminderMinutes: defaultReminderMinutes,
+            defaultEventDurationMinutes: defaultEventDurationMinutes,
+            defaultEventHour: defaultEventHour
+        )
+
+        saveAppSettingsUseCase.execute(settings)
+
+        statusMessage = "Настройки сохранены"
     }
 }

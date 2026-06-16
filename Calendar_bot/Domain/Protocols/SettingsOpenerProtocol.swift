@@ -1,0 +1,3 @@
+protocol SettingsOpenerProtocol {
+    func openSettings()
+}
