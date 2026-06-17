@@ -11,9 +11,22 @@ final class AppContainer {
     SpeechRecognitionService()
     
     lazy var commandParserService =
-    CommandParserService(
-        settingsService: settingsService
-    )
+        CommandParserService(
+            settingsService: settingsService,
+            dateParser: dateParserService,
+            titleParser: titleParserService
+        )
+    
+    lazy var timeParserService =
+        TimeParserService()
+
+    lazy var dateParserService =
+        DateParserService(
+            timeParser: timeParserService
+        )
+
+    lazy var titleParserService =
+        TitleParserService()
     
     lazy var calendarOpenerService =
     CalendarOpenerService()
