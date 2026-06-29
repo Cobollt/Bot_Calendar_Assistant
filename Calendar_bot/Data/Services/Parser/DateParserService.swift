@@ -17,6 +17,7 @@ final class DateParserService {
             ?? extractWrittenDate(from: text)
             ?? extractRelativeDate(from: text)
             ?? extractWeekdayDate(from: text)
+            ?? extractDayOnlyDate(from: text)
             ?? Date()
 
         return setTime(
@@ -177,15 +178,27 @@ final class DateParserService {
     private func extractWeekdayDate(from text: String) -> Date? {
         let weekdays: [String: Int] = [
             "воскресенье": 1,
+
             "понедельник": 2,
+            "понедельникам": 2,
+
             "вторник": 3,
+            "вторникам": 3,
+
             "среду": 4,
             "среда": 4,
+            "средам": 4,
+
             "четверг": 5,
+            "четвергам": 5,
+
             "пятницу": 6,
             "пятница": 6,
+            "пятницам": 6,
+
             "субботу": 7,
-            "суббота": 7
+            "суббота": 7,
+            "субботам": 7
         ]
 
         for (word, weekday) in weekdays {
@@ -218,7 +231,52 @@ final class DateParserService {
             daysToAdd += 7
         }
 
-        return calendar.date(byAdding: .day, value: daysToAdd, to: now)
+        return calendar.date(
+            byAdding: .day,
+            value: daysToAdd,
+            to: now
+        )
+    }
+
+    private func extractDayOnlyDate(from text: String) -> Date? {
+        let patterns = [
+            #"(?i)\b(\d{1,2})\s+числа\b"#,
+            #"(?i)\b(\d{1,2})\s+число\b"#
+        ]
+
+        for pattern in patterns {
+            guard let regex = try? NSRegularExpression(pattern: pattern),
+                  let match = regex.firstMatch(
+                    in: text,
+                    range: NSRange(text.startIndex..., in: text)
+                  ),
+                  let dayRange = Range(match.range(at: 1), in: text),
+                  let day = Int(text[dayRange]),
+                  day >= 1,
+                  day <= 31
+            else {
+                continue
+            }
+
+            let calendar = Calendar.current
+            let now = Date()
+
+            var components = calendar.dateComponents([.year, .month], from: now)
+            components.day = day
+
+            guard var date = calendar.date(from: components) else {
+                return nil
+            }
+
+            if date < calendar.startOfDay(for: now),
+               let nextMonthDate = calendar.date(byAdding: .month, value: 1, to: date) {
+                date = nextMonthDate
+            }
+
+            return date
+        }
+
+        return nil
     }
 
     private func extractNumber(

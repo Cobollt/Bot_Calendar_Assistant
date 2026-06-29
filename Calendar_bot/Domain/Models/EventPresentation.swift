@@ -5,4 +5,5 @@ struct EventPresentation {
     let date: String
     let time: String
     let reminder: String
+    let recurrence: String
 }

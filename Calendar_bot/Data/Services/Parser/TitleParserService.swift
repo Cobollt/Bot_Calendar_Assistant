@@ -12,6 +12,20 @@ final class TitleParserService {
             #"(?i)\bзапиши\b"#,
             #"(?i)\bмне\b"#,
 
+            #"(?i)\bкаждый день\b"#,
+            #"(?i)\bкаждое утро\b"#,
+            #"(?i)\bежедневно\b"#,
+            #"(?i)\bкаждую неделю\b"#,
+            #"(?i)\bеженедельно\b"#,
+            #"(?i)\bкаждый месяц\b"#,
+            #"(?i)\bежемесячно\b"#,
+            #"(?i)\bкаждый год\b"#,
+            #"(?i)\bежегодно\b"#,
+
+            #"(?i)\bкаждый\s+(?:понедельник|вторник|четверг)\b"#,
+            #"(?i)\bкаждую\s+(?:среду|пятницу|субботу)\b"#,
+            #"(?i)\bкаждое\s+воскресенье\b"#,
+
             #"(?i)\bсегодня\b"#,
             #"(?i)\bзавтра\b"#,
             #"(?i)\bпослезавтра\b"#,
@@ -22,6 +36,7 @@ final class TitleParserService {
 
             #"(?i)\d{1,2}[./-]\d{1,2}(?:[./-]\d{2,4})?"#,
             #"(?i)\d{1,2}\s+(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\s+\d{4})?"#,
+            #"(?i)\d{1,2}\s+(?:числа|число)"#,
 
             #"(?i)\bв\s+(?:следующую|следующий)?\s*(?:понедельник|вторник|среду|среда|четверг|пятницу|пятница|субботу|суббота|воскресенье)\b"#,
 
@@ -37,9 +52,13 @@ final class TitleParserService {
             )
         }
 
-        result = result
-            .replacingOccurrences(of: "  ", with: " ")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        result = result.replacingOccurrences(
+            of: #"\s+"#,
+            with: " ",
+            options: .regularExpression
+        )
+
+        result = result.trimmingCharacters(in: .whitespacesAndNewlines)
 
         return capitalizeFirstLetter(result)
     }

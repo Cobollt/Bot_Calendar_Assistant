@@ -12,6 +12,23 @@ enum EventPresentationMapper {
         timeFormatter.dateFormat = "HH:mm"
 
         let reminderText: String
+        
+        let recurrenceText: String
+
+        if let recurrenceRule = event.recurrenceRule {
+            switch recurrenceRule.frequency {
+            case .daily:
+                recurrenceText = "Каждый день"
+            case .weekly:
+                recurrenceText = "Каждую неделю"
+            case .monthly:
+                recurrenceText = "Каждый месяц"
+            case .yearly:
+                recurrenceText = "Каждый год"
+            }
+        } else {
+            recurrenceText = "Без повторения"
+        }
 
         if let reminder = event.reminder {
             reminderText = "За \(reminder.minutesBefore) мин."
@@ -23,7 +40,8 @@ enum EventPresentationMapper {
             title: event.title,
             date: dateFormatter.string(from: event.startDate),
             time: timeFormatter.string(from: event.startDate),
-            reminder: reminderText
+            reminder: reminderText,
+            recurrence: recurrenceText
         )
     }
 }

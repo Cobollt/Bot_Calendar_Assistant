@@ -10,13 +10,6 @@ final class AppContainer {
     lazy var speechRecognitionService =
     SpeechRecognitionService()
     
-    lazy var commandParserService =
-        CommandParserService(
-            settingsService: settingsService,
-            dateParser: dateParserService,
-            titleParser: titleParserService
-        )
-    
     lazy var timeParserService =
         TimeParserService()
 
@@ -28,6 +21,21 @@ final class AppContainer {
     lazy var titleParserService =
         TitleParserService()
     
+    lazy var textNormalizerService =
+        TextNormalizerService()
+    
+    lazy var recurrenceParserService =
+        RecurrenceParserService()
+    
+    lazy var commandParserService =
+        CommandParserService(
+            settingsService: settingsService,
+            textNormalizer: textNormalizerService,
+            dateParser: dateParserService,
+            titleParser: titleParserService,
+            recurrenceParser: recurrenceParserService
+        )
+        
     lazy var calendarOpenerService =
     CalendarOpenerService()
     
@@ -96,6 +104,21 @@ final class AppContainer {
             settingsOpenerService
     )
     
+    lazy var findCalendarEventsUseCase =
+        FindCalendarEventsUseCase(
+            calendarRepository: calendarRepository
+        )
+    
+    lazy var deleteCalendarEventUseCase =
+        DeleteCalendarEventUseCase(
+            calendarRepository: calendarRepository
+        )
+    
+    lazy var updateCalendarEventUseCase =
+        UpdateCalendarEventUseCase(
+            calendarRepository: calendarRepository
+        )
+    
     // MARK: - ViewModels
     
     func makeHomeViewModel() -> HomeViewModel {
@@ -104,6 +127,9 @@ final class AppContainer {
             startVoiceRecognitionUseCase: startVoiceRecognitionUseCase,
             parseVoiceCommandUseCase: parseVoiceCommandUseCase,
             createCalendarEventUseCase: createCalendarEventUseCase,
+            findCalendarEventsUseCase: findCalendarEventsUseCase,
+            deleteCalendarEventUseCase: deleteCalendarEventUseCase,
+            updateCalendarEventUseCase: updateCalendarEventUseCase,
             openCalendarUseCase: openCalendarUseCase
         )
     }

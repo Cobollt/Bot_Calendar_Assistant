@@ -9,10 +9,75 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Настройки события")
-                .font(.headline)
+        ScrollView {
+            VStack(spacing: 24) {
 
+                permissionsSection
+
+                eventSettingsSection
+
+                toolsSection
+
+                aboutSection
+            }
+            .padding()
+        }
+        .navigationTitle("Настройки")
+        .onAppear {
+            viewModel.refreshPermissions()
+            viewModel.loadSettings()
+        }
+    }
+}
+
+// MARK: - Sections
+
+private extension SettingsView {
+
+    var permissionsSection: some View {
+        settingsSection(title: "Разрешения") {
+            permissionRow(
+                title: "Календарь",
+                isGranted: viewModel.hasCalendarAccess
+            )
+
+            permissionRow(
+                title: "Микрофон",
+                isGranted: viewModel.hasMicrophoneAccess
+            )
+
+            permissionRow(
+                title: "Распознавание речи",
+                isGranted: viewModel.hasSpeechAccess
+            )
+
+            Button {
+                Task {
+                    await viewModel.requestCalendarAccess()
+                }
+            } label: {
+                Text(
+                    viewModel.hasCalendarAccess
+                    ? "Доступ к календарю уже есть"
+                    : "Разрешить доступ к календарю"
+                )
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(viewModel.hasCalendarAccess)
+
+            Button {
+                viewModel.openSettings()
+            } label: {
+                Text("Открыть настройки iPhone")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+        }
+    }
+
+    var eventSettingsSection: some View {
+        settingsSection(title: "Параметры событий") {
             Stepper(
                 "Напоминание: \(viewModel.defaultReminderMinutes) мин.",
                 value: $viewModel.defaultReminderMinutes,
@@ -33,86 +98,67 @@ struct SettingsView: View {
                 in: 0...23
             )
 
-            Button("Сохранить настройки") {
-                viewModel.saveSettings()
-            }
-            .buttonStyle(.bordered)
-        }
-        .padding()
-        .background(Color.gray.opacity(0.12))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        
-        VStack(spacing: 24) {
-
-            Text("Настройки")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-
-            VStack(spacing: 12) {
-                permissionRow(
-                    title: "Календарь",
-                    isGranted: viewModel.hasCalendarAccess
-                )
-
-                permissionRow(
-                    title: "Микрофон",
-                    isGranted: viewModel.hasMicrophoneAccess
-                )
-
-                permissionRow(
-                    title: "Распознавание речи",
-                    isGranted: viewModel.hasSpeechAccess
-                )
-            }
-
             Button {
-                Task {
-                    await viewModel.requestCalendarAccess()
-                }
+                viewModel.saveSettings()
             } label: {
-                Text(
-                    viewModel.hasCalendarAccess
-                    ? "Доступ к календарю уже есть"
-                    : "Разрешить доступ к календарю"
-                )
-                .frame(maxWidth: .infinity)
+                Text("Сохранить настройки")
+                    .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .disabled(viewModel.hasCalendarAccess)
-
-            Button {
-
-                viewModel.openSettings()
-
-            }
-
-            label: {
-
-                Text(
-                    "Управление разрешениями"
-                )
-
-                .frame(maxWidth: .infinity)
-
-            }
-
-            .buttonStyle(
-                .borderedProminent
-            )
-            
-            Text(viewModel.statusMessage)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-
-            Spacer()
-        }
-        .padding()
-        .onAppear {
-            viewModel.refreshPermissions()
         }
     }
 
-    private func permissionRow(
+    var toolsSection: some View {
+        settingsSection(title: "Инструменты") {
+            Text("Здесь будут дополнительные функции приложения.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+
+            Text("Например: сброс пользовательских настроек, диагностика, проверка календаря.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    var aboutSection: some View {
+        settingsSection(title: "О программе") {
+            Text("Calendar Bot Assistant")
+                .font(.headline)
+
+            Text("Голосовой ассистент для создания событий в iCloud Calendar.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+
+            Text("Версия 1.0")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+// MARK: - UI Components
+
+private extension SettingsView {
+
+    func settingsSection<Content: View>(
+        title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(title)
+                .font(.headline)
+
+            VStack(spacing: 12) {
+                content()
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.gray.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    func permissionRow(
         title: String,
         isGranted: Bool
     ) -> some View {
@@ -124,8 +170,5 @@ struct SettingsView: View {
             Image(systemName: isGranted ? "checkmark.circle.fill" : "xmark.circle.fill")
                 .foregroundStyle(isGranted ? .green : .red)
         }
-        .padding()
-        .background(Color.gray.opacity(0.12))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
