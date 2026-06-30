@@ -11,32 +11,37 @@ final class HomeViewModel: ObservableObject {
     @Published var pendingAction: HomePendingAction = .none
 
     private let checkPermissionsUseCase: CheckPermissionsUseCase
-    private let startVoiceRecognitionUseCase: StartVoiceRecognitionUseCase
-    private let parseVoiceCommandUseCase: ParseVoiceCommandUseCase
     private let createCalendarEventUseCase: CreateCalendarEventUseCase
-    private let findCalendarEventsUseCase: FindCalendarEventsUseCase
     private let deleteCalendarEventUseCase: DeleteCalendarEventUseCase
     private let updateCalendarEventUseCase: UpdateCalendarEventUseCase
     private let openCalendarUseCase: OpenCalendarUseCase
 
+    private let createEventFlow: HomeCreateEventFlow
+    private let deleteEventFlow: HomeDeleteEventFlow
+    private let moveEventFlow: HomeMoveEventFlow
+    private let reminderUpdateFlow: HomeReminderUpdateFlow
+
     init(
         checkPermissionsUseCase: CheckPermissionsUseCase,
-        startVoiceRecognitionUseCase: StartVoiceRecognitionUseCase,
-        parseVoiceCommandUseCase: ParseVoiceCommandUseCase,
         createCalendarEventUseCase: CreateCalendarEventUseCase,
-        findCalendarEventsUseCase: FindCalendarEventsUseCase,
         deleteCalendarEventUseCase: DeleteCalendarEventUseCase,
         updateCalendarEventUseCase: UpdateCalendarEventUseCase,
-        openCalendarUseCase: OpenCalendarUseCase
+        openCalendarUseCase: OpenCalendarUseCase,
+        createEventFlow: HomeCreateEventFlow,
+        deleteEventFlow: HomeDeleteEventFlow,
+        moveEventFlow: HomeMoveEventFlow,
+        reminderUpdateFlow: HomeReminderUpdateFlow
     ) {
         self.checkPermissionsUseCase = checkPermissionsUseCase
-        self.startVoiceRecognitionUseCase = startVoiceRecognitionUseCase
-        self.parseVoiceCommandUseCase = parseVoiceCommandUseCase
         self.createCalendarEventUseCase = createCalendarEventUseCase
-        self.findCalendarEventsUseCase = findCalendarEventsUseCase
         self.deleteCalendarEventUseCase = deleteCalendarEventUseCase
         self.updateCalendarEventUseCase = updateCalendarEventUseCase
         self.openCalendarUseCase = openCalendarUseCase
+
+        self.createEventFlow = createEventFlow
+        self.deleteEventFlow = deleteEventFlow
+        self.moveEventFlow = moveEventFlow
+        self.reminderUpdateFlow = reminderUpdateFlow
 
         refreshPermissions()
     }
@@ -51,113 +56,57 @@ final class HomeViewModel: ObservableObject {
     }
 
     func prepareCreateEvent() async {
-        await runVoiceFlow(
+        await runPrepareFlow(
             listeningMessage: "Слушаю...",
-            failureMessage: "Не удалось подготовить событие"
-        ) { command in
-            let event = try parseVoiceCommandUseCase.execute(command)
-
-            pendingAction = .create(
-                event,
-                EventPresentationMapper.map(event)
-            )
-
-            statusMessage = "Проверьте событие перед созданием"
+            successMessage: "Проверьте событие перед созданием"
+        ) {
+            let result = try await createEventFlow.prepare()
+            return (result.0, result.1, nil)
         }
     }
 
     func prepareDeleteEvent() async {
-        await runVoiceFlow(
+        await runPrepareFlow(
             listeningMessage: "Слушаю команду удаления...",
-            failureMessage: "Событие для удаления не найдено"
-        ) { command in
-            let searchText = HomeEventCommandMapper.makeDeleteSearchText(
-                from: command.rawText
+            successMessage: "Проверьте событие перед удалением"
+        ) {
+            let result = try await deleteEventFlow.prepare()
+
+            return (
+                result.0,
+                result.1,
+                result.1 == nil ? "Событие для удаления не найдено" : nil
             )
-
-            guard let event = try await findFirstEvent(matching: searchText) else {
-                statusMessage = "Событие для удаления не найдено"
-                return
-            }
-
-            pendingAction = .delete(
-                event,
-                EventPresentationMapper.map(event)
-            )
-
-            statusMessage = "Проверьте событие перед удалением"
         }
     }
 
     func prepareMoveEvent() async {
-        await runVoiceFlow(
+        await runPrepareFlow(
             listeningMessage: "Слушаю команду переноса...",
-            failureMessage: "Событие для переноса не найдено"
-        ) { command in
-            let searchText = HomeEventCommandMapper.makeMoveSearchText(
-                from: command.rawText
+            successMessage: "Проверьте новое время события"
+        ) {
+            let result = try await moveEventFlow.prepare()
+
+            return (
+                result.0,
+                result.1,
+                result.1 == nil ? "Событие для переноса не найдено" : nil
             )
-
-            guard let event = try await findFirstEvent(matching: searchText) else {
-                statusMessage = "Событие для переноса не найдено"
-                return
-            }
-
-            let movedEvent = try HomeEventCommandMapper.makeMovedEvent(
-                originalEvent: event,
-                commandText: command.rawText,
-                parseVoiceCommandUseCase: parseVoiceCommandUseCase
-            )
-
-            pendingAction = .move(
-                movedEvent,
-                EventPresentationMapper.map(movedEvent)
-            )
-
-            statusMessage = "Проверьте новое время события"
         }
     }
 
     func prepareReminderUpdate() async {
-        await runVoiceFlow(
+        await runPrepareFlow(
             listeningMessage: "Слушаю команду изменения напоминания...",
-            failureMessage: "Событие для изменения напоминания не найдено"
-        ) { command in
-            guard let reminderMinutes = HomeEventCommandMapper
-                .extractReminderMinutes(from: command.rawText)
-            else {
-                statusMessage = "Не удалось определить новое время напоминания"
-                return
-            }
+            successMessage: "Проверьте новое напоминание"
+        ) {
+            let result = try await reminderUpdateFlow.prepare()
 
-            let searchText = HomeEventCommandMapper.makeReminderSearchText(
-                from: command.rawText
+            return (
+                result.0,
+                result.1,
+                result.2
             )
-
-            guard let event = try await findFirstEvent(matching: searchText) else {
-                statusMessage = "Событие для изменения напоминания не найдено"
-                return
-            }
-
-            let updatedEvent = CalendarEvent(
-                id: event.id,
-                externalIdentifier: event.externalIdentifier,
-                title: event.title,
-                startDate: event.startDate,
-                endDate: event.endDate,
-                notes: event.notes,
-                reminder: reminderMinutes == 0
-                    ? nil
-                    : Reminder(minutesBefore: reminderMinutes),
-                recurrenceRule: event.recurrenceRule
-            )
-
-            pendingAction = .updateReminder(
-                updatedEvent,
-                EventPresentationMapper.map(updatedEvent)
-            )
-
-            statusMessage = "Проверьте новое напоминание"
         }
     }
 
@@ -201,15 +150,15 @@ final class HomeViewModel: ObservableObject {
     }
 
     func cancelPendingAction() {
-        pendingAction = .none
+        clearPendingAction()
         recognizedText = ""
         statusMessage = "Действие отменено"
     }
 
-    private func runVoiceFlow(
+    private func runPrepareFlow(
         listeningMessage: String,
-        failureMessage: String,
-        action: (VoiceCommand) async throws -> Void
+        successMessage: String,
+        action: () async throws -> (VoiceCommand, HomePendingAction?, String?)
     ) async {
         refreshPermissions()
 
@@ -225,10 +174,22 @@ final class HomeViewModel: ObservableObject {
             clearPendingAction()
             statusMessage = listeningMessage
 
-            let command = try await startVoiceRecognitionUseCase.execute()
-            recognizedText = command.rawText
+            let result = try await action()
 
-            try await action(command)
+            recognizedText = result.0.rawText
+
+            if let message = result.2 {
+                statusMessage = message
+                return
+            }
+
+            guard let pendingAction = result.1 else {
+                statusMessage = "Действие не подготовлено"
+                return
+            }
+
+            self.pendingAction = pendingAction
+            statusMessage = successMessage
         } catch {
             statusMessage = ErrorMessageMapper.map(error)
         }
@@ -253,26 +214,6 @@ final class HomeViewModel: ObservableObject {
         } catch {
             statusMessage = ErrorMessageMapper.map(error)
         }
-    }
-
-    private func findFirstEvent(
-        matching text: String?
-    ) async throws -> CalendarEvent? {
-        let calendar = Calendar.current
-        let now = Date()
-        let endDate = calendar.date(
-            byAdding: .day,
-            value: 60,
-            to: now
-        ) ?? now
-
-        let events = try await findCalendarEventsUseCase.execute(
-            matching: text,
-            from: now,
-            to: endDate
-        )
-
-        return events.first
     }
 
     private func clearPendingAction() {

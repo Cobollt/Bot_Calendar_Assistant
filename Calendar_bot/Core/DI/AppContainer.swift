@@ -1,15 +1,32 @@
 import Foundation
 
 final class AppContainer {
-    
+
     // MARK: - Services
-    
+
     lazy var eventKitCalendarService =
-    EventKitCalendarService()
-    
+        EventKitCalendarService()
+
     lazy var speechRecognitionService =
-    SpeechRecognitionService()
-    
+        SpeechRecognitionService()
+
+    lazy var settingsService =
+        SettingsService()
+
+    lazy var permissionService =
+        PermissionService()
+
+    lazy var settingsOpenerService =
+        SettingsOpenerService()
+
+    lazy var calendarOpenerService =
+        CalendarOpenerService()
+
+    // MARK: - Parsers
+
+    lazy var textNormalizerService =
+        TextNormalizerService()
+
     lazy var timeParserService =
         TimeParserService()
 
@@ -20,13 +37,10 @@ final class AppContainer {
 
     lazy var titleParserService =
         TitleParserService()
-    
-    lazy var textNormalizerService =
-        TextNormalizerService()
-    
+
     lazy var recurrenceParserService =
         RecurrenceParserService()
-    
+
     lazy var commandParserService =
         CommandParserService(
             settingsService: settingsService,
@@ -35,105 +49,119 @@ final class AppContainer {
             titleParser: titleParserService,
             recurrenceParser: recurrenceParserService
         )
-        
-    lazy var calendarOpenerService =
-    CalendarOpenerService()
-    
-    lazy var settingsService =
-    SettingsService()
-    
-    lazy var permissionService =
-    PermissionService()
-    
-    lazy var settingsOpenerService =
-    SettingsOpenerService()
-    
-    
+
     // MARK: - Repository
-    
+
     lazy var calendarRepository =
-    ICloudCalendarRepository(
-        calendarService: eventKitCalendarService
-    )
-    
+        ICloudCalendarRepository(
+            calendarService: eventKitCalendarService
+        )
+
     // MARK: - UseCases
-    
+
     lazy var checkPermissionsUseCase =
-    CheckPermissionsUseCase(
-        permissionService: permissionService
-    )
-    
+        CheckPermissionsUseCase(
+            permissionService: permissionService
+        )
+
     lazy var requestCalendarAccessUseCase =
-    RequestCalendarAccessUseCase(
-        permissionService: permissionService
-    )
-    
-    lazy var startVoiceRecognitionUseCase =
-    StartVoiceRecognitionUseCase(
-        speechRecognizer: speechRecognitionService
-    )
-    
-    lazy var parseVoiceCommandUseCase =
-    ParseVoiceCommandUseCase(
-        commandParser: commandParserService
-    )
-    
-    lazy var createCalendarEventUseCase =
-    CreateCalendarEventUseCase(
-        calendarRepository: calendarRepository
-    )
-    
+        RequestCalendarAccessUseCase(
+            permissionService: permissionService
+        )
+
     lazy var getAppSettingsUseCase =
-    GetAppSettingsUseCase(
-        settingsService: settingsService
-    )
-    
+        GetAppSettingsUseCase(
+            settingsService: settingsService
+        )
+
     lazy var saveAppSettingsUseCase =
-    SaveAppSettingsUseCase(
-        settingsService: settingsService
-    )
-    
-    lazy var openCalendarUseCase =
-    OpenCalendarUseCase(
-        calendarOpener: calendarOpenerService
-    )
-    
-    lazy var openSettingsUseCase =
-    OpenSettingsUseCase(
-        settingsOpener:
-            settingsOpenerService
-    )
-    
+        SaveAppSettingsUseCase(
+            settingsService: settingsService
+        )
+
+    lazy var startVoiceRecognitionUseCase =
+        StartVoiceRecognitionUseCase(
+            speechRecognizer: speechRecognitionService
+        )
+
+    lazy var parseVoiceCommandUseCase =
+        ParseVoiceCommandUseCase(
+            commandParser: commandParserService
+        )
+
+    lazy var createCalendarEventUseCase =
+        CreateCalendarEventUseCase(
+            calendarRepository: calendarRepository
+        )
+
     lazy var findCalendarEventsUseCase =
         FindCalendarEventsUseCase(
             calendarRepository: calendarRepository
         )
-    
+
     lazy var deleteCalendarEventUseCase =
         DeleteCalendarEventUseCase(
             calendarRepository: calendarRepository
         )
-    
+
     lazy var updateCalendarEventUseCase =
         UpdateCalendarEventUseCase(
             calendarRepository: calendarRepository
         )
-    
+
+    lazy var openSettingsUseCase =
+        OpenSettingsUseCase(
+            settingsOpener: settingsOpenerService
+        )
+
+    lazy var openCalendarUseCase =
+        OpenCalendarUseCase(
+            calendarOpener: calendarOpenerService
+        )
+
+    // MARK: - Home Flows
+
+    lazy var homeCreateEventFlow =
+        HomeCreateEventFlow(
+            startVoiceRecognitionUseCase: startVoiceRecognitionUseCase,
+            parseVoiceCommandUseCase: parseVoiceCommandUseCase
+        )
+
+    lazy var homeDeleteEventFlow =
+        HomeDeleteEventFlow(
+            startVoiceRecognitionUseCase: startVoiceRecognitionUseCase,
+            findCalendarEventsUseCase: findCalendarEventsUseCase
+        )
+
+    lazy var homeMoveEventFlow =
+        HomeMoveEventFlow(
+            startVoiceRecognitionUseCase: startVoiceRecognitionUseCase,
+            findCalendarEventsUseCase: findCalendarEventsUseCase,
+            parseVoiceCommandUseCase: parseVoiceCommandUseCase
+        )
+
+    lazy var homeReminderUpdateFlow =
+        HomeReminderUpdateFlow(
+            startVoiceRecognitionUseCase: startVoiceRecognitionUseCase,
+            findCalendarEventsUseCase: findCalendarEventsUseCase
+        )
+
     // MARK: - ViewModels
-    
+
     func makeHomeViewModel() -> HomeViewModel {
         HomeViewModel(
             checkPermissionsUseCase: checkPermissionsUseCase,
-            startVoiceRecognitionUseCase: startVoiceRecognitionUseCase,
-            parseVoiceCommandUseCase: parseVoiceCommandUseCase,
             createCalendarEventUseCase: createCalendarEventUseCase,
-            findCalendarEventsUseCase: findCalendarEventsUseCase,
             deleteCalendarEventUseCase: deleteCalendarEventUseCase,
             updateCalendarEventUseCase: updateCalendarEventUseCase,
-            openCalendarUseCase: openCalendarUseCase
+            openCalendarUseCase: openCalendarUseCase,
+            createEventFlow: homeCreateEventFlow,
+            deleteEventFlow: homeDeleteEventFlow,
+            moveEventFlow: homeMoveEventFlow,
+            reminderUpdateFlow: homeReminderUpdateFlow
         )
     }
-    
+
     func makeSettingsViewModel() -> SettingsViewModel {
         SettingsViewModel(
             checkPermissionsUseCase: checkPermissionsUseCase,
