@@ -13,17 +13,11 @@ final class HomeReminderUpdateFlow {
         self.findCalendarEventsUseCase = findCalendarEventsUseCase
     }
 
-    func prepare() async throws -> (VoiceCommand, HomePendingAction?, String?) {
-        let command = try await startVoiceRecognitionUseCase.execute()
-
+    func prepare(from command: VoiceCommand) async throws -> (HomePendingAction?, String?) {
         guard let reminderMinutes = HomeEventCommandMapper
             .extractReminderMinutes(from: command.rawText)
         else {
-            return (
-                command,
-                nil,
-                "Не удалось определить новое время напоминания"
-            )
+            return (nil, "Не удалось определить новое время напоминания")
         }
 
         let searchText = HomeEventCommandMapper.makeReminderSearchText(
@@ -31,11 +25,7 @@ final class HomeReminderUpdateFlow {
         )
 
         guard let event = try await findFirstEvent(matching: searchText) else {
-            return (
-                command,
-                nil,
-                "Событие для изменения напоминания не найдено"
-            )
+            return (nil, "Событие для изменения напоминания не найдено")
         }
 
         let updatedEvent = CalendarEvent(
@@ -52,7 +42,6 @@ final class HomeReminderUpdateFlow {
         )
 
         return (
-            command,
             .updateReminder(
                 updatedEvent,
                 EventPresentationMapper.map(updatedEvent)

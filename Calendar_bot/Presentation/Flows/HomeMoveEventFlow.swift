@@ -16,15 +16,13 @@ final class HomeMoveEventFlow {
         self.parseVoiceCommandUseCase = parseVoiceCommandUseCase
     }
 
-    func prepare() async throws -> (VoiceCommand, HomePendingAction?) {
-        let command = try await startVoiceRecognitionUseCase.execute()
-
+    func prepare(from command: VoiceCommand) async throws -> HomePendingAction? {
         let searchText = HomeEventCommandMapper.makeMoveSearchText(
             from: command.rawText
         )
 
         guard let event = try await findFirstEvent(matching: searchText) else {
-            return (command, nil)
+            return nil
         }
 
         let movedEvent = try HomeEventCommandMapper.makeMovedEvent(
@@ -33,12 +31,9 @@ final class HomeMoveEventFlow {
             parseVoiceCommandUseCase: parseVoiceCommandUseCase
         )
 
-        return (
-            command,
-            .move(
-                movedEvent,
-                EventPresentationMapper.map(movedEvent)
-            )
+        return .move(
+            movedEvent,
+            EventPresentationMapper.map(movedEvent)
         )
     }
 

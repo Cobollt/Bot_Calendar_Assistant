@@ -13,16 +13,12 @@ final class HomeCreateEventFlow {
         self.parseVoiceCommandUseCase = parseVoiceCommandUseCase
     }
 
-    func prepare() async throws -> (VoiceCommand, HomePendingAction) {
-        let command = try await startVoiceRecognitionUseCase.execute()
+    func prepare(from command: VoiceCommand) async throws -> HomePendingAction {
         let event = try parseVoiceCommandUseCase.execute(command)
 
-        return (
-            command,
-            .create(
-                event,
-                EventPresentationMapper.map(event)
-            )
+        return .create(
+            event,
+            EventPresentationMapper.map(event)
         )
     }
 }

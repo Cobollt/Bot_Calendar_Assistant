@@ -2,6 +2,11 @@ import EventKit
 
 final class EventKitCalendarService {
     private let eventStore = EKEventStore()
+    private let searchEngine: EventSearchEngine
+
+    init(searchEngine: EventSearchEngine) {
+        self.searchEngine = searchEngine
+    }
     
     func requestAccess() async throws -> Bool {
 
@@ -171,11 +176,25 @@ final class EventKitCalendarService {
         if let text,
            !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
 
-            filteredEvents = events.filter {
-                $0.title
-                    .lowercased()
-                    .contains(text.lowercased())
+            let mappedEvents = events.map { ekEvent in
+                CalendarEvent(
+                    id: UUID(),
+                    externalIdentifier: ekEvent.eventIdentifier,
+                    title: ekEvent.title,
+                    startDate: ekEvent.startDate,
+                    endDate: ekEvent.endDate,
+                    notes: ekEvent.notes,
+                    reminder: ekEvent.alarms?.first.map {
+                        Reminder(minutesBefore: Int(abs($0.relativeOffset) / 60))
+                    },
+                    recurrenceRule: nil
+                )
             }
+
+            return searchEngine.filterAndSort(
+                events: mappedEvents,
+                query: text
+            )
 
         } else {
             filteredEvents = events

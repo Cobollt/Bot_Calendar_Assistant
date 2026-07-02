@@ -34,9 +34,49 @@ final class AppContainer {
         DateParserService(
             timeParser: timeParserService
         )
+    
+    lazy var eventKeywordCleaner =
+        EventKeywordCleaner()
+
+    lazy var eventDateTextCleaner =
+        EventDateTextCleaner()
+
+    lazy var eventTimeTextCleaner =
+        EventTimeTextCleaner()
+
+    lazy var eventRecurrenceTextCleaner =
+        EventRecurrenceTextCleaner()
+
+    lazy var eventReminderTextCleaner =
+        EventReminderTextCleaner()
+
+    lazy var eventTitleBuilderService =
+        EventTitleBuilderService(
+            keywordCleaner: eventKeywordCleaner,
+            dateCleaner: eventDateTextCleaner,
+            timeCleaner: eventTimeTextCleaner,
+            recurrenceCleaner: eventRecurrenceTextCleaner,
+            reminderCleaner: eventReminderTextCleaner
+        )
+    
+    lazy var eventSearchEngine =
+        EventSearchEngine()
+
+    lazy var eventKitCalendarService =
+        EventKitCalendarService(
+            searchEngine: eventSearchEngine
+        )
+
+    lazy var titleParserService =
+        TitleParserService(
+            titleBuilder: eventTitleBuilderService
+        )
 
     lazy var titleParserService =
         TitleParserService()
+    
+    lazy var commandIntentParserService =
+        CommandIntentParserService()
 
     lazy var recurrenceParserService =
         RecurrenceParserService()
@@ -119,7 +159,7 @@ final class AppContainer {
             calendarOpener: calendarOpenerService
         )
 
-    // MARK: - Home Flows
+    // MARK: - Flows
 
     lazy var homeCreateEventFlow =
         HomeCreateEventFlow(
@@ -145,6 +185,17 @@ final class AppContainer {
             startVoiceRecognitionUseCase: startVoiceRecognitionUseCase,
             findCalendarEventsUseCase: findCalendarEventsUseCase
         )
+    
+    lazy var voiceCommandFlow =
+        VoiceCommandFlow(
+            startVoiceRecognitionUseCase: startVoiceRecognitionUseCase,
+            textNormalizer: textNormalizerService,
+            intentParser: commandIntentParserService,
+            createFlow: homeCreateEventFlow,
+            deleteFlow: homeDeleteEventFlow,
+            moveFlow: homeMoveEventFlow,
+            reminderFlow: homeReminderUpdateFlow
+        )
 
     // MARK: - ViewModels
 
@@ -155,10 +206,7 @@ final class AppContainer {
             deleteCalendarEventUseCase: deleteCalendarEventUseCase,
             updateCalendarEventUseCase: updateCalendarEventUseCase,
             openCalendarUseCase: openCalendarUseCase,
-            createEventFlow: homeCreateEventFlow,
-            deleteEventFlow: homeDeleteEventFlow,
-            moveEventFlow: homeMoveEventFlow,
-            reminderUpdateFlow: homeReminderUpdateFlow
+            voiceCommandFlow: voiceCommandFlow
         )
     }
 

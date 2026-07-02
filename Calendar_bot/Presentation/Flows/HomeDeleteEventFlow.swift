@@ -13,23 +13,18 @@ final class HomeDeleteEventFlow {
         self.findCalendarEventsUseCase = findCalendarEventsUseCase
     }
 
-    func prepare() async throws -> (VoiceCommand, HomePendingAction?) {
-        let command = try await startVoiceRecognitionUseCase.execute()
-
+    func prepare(from command: VoiceCommand) async throws -> HomePendingAction? {
         let searchText = HomeEventCommandMapper.makeDeleteSearchText(
             from: command.rawText
         )
 
         guard let event = try await findFirstEvent(matching: searchText) else {
-            return (command, nil)
+            return nil
         }
 
-        return (
-            command,
-            .delete(
-                event,
-                EventPresentationMapper.map(event)
-            )
+        return .delete(
+            event,
+            EventPresentationMapper.map(event)
         )
     }
 

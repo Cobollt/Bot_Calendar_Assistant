@@ -15,11 +15,7 @@ final class HomeViewModel: ObservableObject {
     private let deleteCalendarEventUseCase: DeleteCalendarEventUseCase
     private let updateCalendarEventUseCase: UpdateCalendarEventUseCase
     private let openCalendarUseCase: OpenCalendarUseCase
-
-    private let createEventFlow: HomeCreateEventFlow
-    private let deleteEventFlow: HomeDeleteEventFlow
-    private let moveEventFlow: HomeMoveEventFlow
-    private let reminderUpdateFlow: HomeReminderUpdateFlow
+    private let voiceCommandFlow: VoiceCommandFlow
 
     init(
         checkPermissionsUseCase: CheckPermissionsUseCase,
@@ -27,21 +23,14 @@ final class HomeViewModel: ObservableObject {
         deleteCalendarEventUseCase: DeleteCalendarEventUseCase,
         updateCalendarEventUseCase: UpdateCalendarEventUseCase,
         openCalendarUseCase: OpenCalendarUseCase,
-        createEventFlow: HomeCreateEventFlow,
-        deleteEventFlow: HomeDeleteEventFlow,
-        moveEventFlow: HomeMoveEventFlow,
-        reminderUpdateFlow: HomeReminderUpdateFlow
+        voiceCommandFlow: VoiceCommandFlow
     ) {
         self.checkPermissionsUseCase = checkPermissionsUseCase
         self.createCalendarEventUseCase = createCalendarEventUseCase
         self.deleteCalendarEventUseCase = deleteCalendarEventUseCase
         self.updateCalendarEventUseCase = updateCalendarEventUseCase
         self.openCalendarUseCase = openCalendarUseCase
-
-        self.createEventFlow = createEventFlow
-        self.deleteEventFlow = deleteEventFlow
-        self.moveEventFlow = moveEventFlow
-        self.reminderUpdateFlow = reminderUpdateFlow
+        self.voiceCommandFlow = voiceCommandFlow
 
         refreshPermissions()
     }
@@ -55,63 +44,41 @@ final class HomeViewModel: ObservableObject {
         openCalendarUseCase.execute()
     }
 
-    func prepareCreateEvent() async {
-        await runPrepareFlow(
-            listeningMessage: "Слушаю...",
-            successMessage: "Проверьте событие перед созданием"
-        ) {
-            let result = try await createEventFlow.prepare()
-            return (result.0, result.1, nil)
+    func processVoiceCommand() async {
+        refreshPermissions()
+
+        guard hasCalendarAccess else {
+            statusMessage = "Сначала разрешите доступ к календарю в настройках."
+            return
         }
-    }
 
-    func prepareDeleteEvent() async {
-        await runPrepareFlow(
-            listeningMessage: "Слушаю команду удаления...",
-            successMessage: "Проверьте событие перед удалением"
-        ) {
-            let result = try await deleteEventFlow.prepare()
+        isProcessing = true
+        defer { isProcessing = false }
 
-            return (
-                result.0,
-                result.1,
-                result.1 == nil ? "Событие для удаления не найдено" : nil
-            )
-        }
-    }
+        do {
+            clearPendingAction()
+            statusMessage = "Слушаю..."
 
-    func prepareMoveEvent() async {
-        await runPrepareFlow(
-            listeningMessage: "Слушаю команду переноса...",
-            successMessage: "Проверьте новое время события"
-        ) {
-            let result = try await moveEventFlow.prepare()
+            let result = try await voiceCommandFlow.execute()
 
-            return (
-                result.0,
-                result.1,
-                result.1 == nil ? "Событие для переноса не найдено" : nil
-            )
-        }
-    }
+            switch result {
+            case .success(let recognizedText, let pendingAction):
+                self.recognizedText = recognizedText
+                self.pendingAction = pendingAction
+                self.statusMessage = makePreviewMessage(for: pendingAction)
 
-    func prepareReminderUpdate() async {
-        await runPrepareFlow(
-            listeningMessage: "Слушаю команду изменения напоминания...",
-            successMessage: "Проверьте новое напоминание"
-        ) {
-            let result = try await reminderUpdateFlow.prepare()
-
-            return (
-                result.0,
-                result.1,
-                result.2
-            )
+            case .failure(let recognizedText, let message):
+                self.recognizedText = recognizedText
+                self.statusMessage = message
+            }
+        } catch {
+            statusMessage = ErrorMessageMapper.map(error)
         }
     }
 
     func confirmPendingAction() async {
         switch pendingAction {
+
         case .none:
             statusMessage = "Нет действия для подтверждения"
 
@@ -155,46 +122,6 @@ final class HomeViewModel: ObservableObject {
         statusMessage = "Действие отменено"
     }
 
-    private func runPrepareFlow(
-        listeningMessage: String,
-        successMessage: String,
-        action: () async throws -> (VoiceCommand, HomePendingAction?, String?)
-    ) async {
-        refreshPermissions()
-
-        guard hasCalendarAccess else {
-            statusMessage = "Сначала разрешите доступ к календарю в настройках."
-            return
-        }
-
-        isProcessing = true
-        defer { isProcessing = false }
-
-        do {
-            clearPendingAction()
-            statusMessage = listeningMessage
-
-            let result = try await action()
-
-            recognizedText = result.0.rawText
-
-            if let message = result.2 {
-                statusMessage = message
-                return
-            }
-
-            guard let pendingAction = result.1 else {
-                statusMessage = "Действие не подготовлено"
-                return
-            }
-
-            self.pendingAction = pendingAction
-            statusMessage = successMessage
-        } catch {
-            statusMessage = ErrorMessageMapper.map(error)
-        }
-    }
-
     private func performConfirmedAction(
         processingMessage: String,
         successMessage: String,
@@ -213,6 +140,21 @@ final class HomeViewModel: ObservableObject {
             statusMessage = successMessage
         } catch {
             statusMessage = ErrorMessageMapper.map(error)
+        }
+    }
+
+    private func makePreviewMessage(for action: HomePendingAction) -> String {
+        switch action {
+        case .none:
+            return "Действие не подготовлено"
+        case .create:
+            return "Проверьте событие перед созданием"
+        case .delete:
+            return "Проверьте событие перед удалением"
+        case .move:
+            return "Проверьте новое время события"
+        case .updateReminder:
+            return "Проверьте новое напоминание"
         }
     }
 
