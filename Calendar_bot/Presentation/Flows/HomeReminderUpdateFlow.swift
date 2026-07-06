@@ -2,14 +2,11 @@ import Foundation
 
 final class HomeReminderUpdateFlow {
 
-    private let startVoiceRecognitionUseCase: StartVoiceRecognitionUseCase
     private let findCalendarEventsUseCase: FindCalendarEventsUseCase
 
     init(
-        startVoiceRecognitionUseCase: StartVoiceRecognitionUseCase,
         findCalendarEventsUseCase: FindCalendarEventsUseCase
     ) {
-        self.startVoiceRecognitionUseCase = startVoiceRecognitionUseCase
         self.findCalendarEventsUseCase = findCalendarEventsUseCase
     }
 

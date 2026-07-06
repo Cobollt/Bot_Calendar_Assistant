@@ -4,9 +4,6 @@ final class AppContainer {
 
     // MARK: - Services
 
-    lazy var eventKitCalendarService =
-        EventKitCalendarService()
-
     lazy var speechRecognitionService =
         SpeechRecognitionService()
 
@@ -71,9 +68,6 @@ final class AppContainer {
         TitleParserService(
             titleBuilder: eventTitleBuilderService
         )
-
-    lazy var titleParserService =
-        TitleParserService()
     
     lazy var commandIntentParserService =
         CommandIntentParserService()
@@ -163,26 +157,22 @@ final class AppContainer {
 
     lazy var homeCreateEventFlow =
         HomeCreateEventFlow(
-            startVoiceRecognitionUseCase: startVoiceRecognitionUseCase,
             parseVoiceCommandUseCase: parseVoiceCommandUseCase
         )
 
     lazy var homeDeleteEventFlow =
         HomeDeleteEventFlow(
-            startVoiceRecognitionUseCase: startVoiceRecognitionUseCase,
             findCalendarEventsUseCase: findCalendarEventsUseCase
         )
 
     lazy var homeMoveEventFlow =
         HomeMoveEventFlow(
-            startVoiceRecognitionUseCase: startVoiceRecognitionUseCase,
             findCalendarEventsUseCase: findCalendarEventsUseCase,
             parseVoiceCommandUseCase: parseVoiceCommandUseCase
         )
 
     lazy var homeReminderUpdateFlow =
         HomeReminderUpdateFlow(
-            startVoiceRecognitionUseCase: startVoiceRecognitionUseCase,
             findCalendarEventsUseCase: findCalendarEventsUseCase
         )
     

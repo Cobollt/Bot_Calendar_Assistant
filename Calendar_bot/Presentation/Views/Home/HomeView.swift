@@ -48,24 +48,9 @@ struct HomeView: View {
                     HomeActionButtonsView(
                         isProcessing: viewModel.isProcessing,
                         hasCalendarAccess: viewModel.hasCalendarAccess,
-                        onCreate: {
+                        onVoiceCommand: {
                             Task {
-                                await viewModel.prepareCreateEvent()
-                            }
-                        },
-                        onDelete: {
-                            Task {
-                                await viewModel.prepareDeleteEvent()
-                            }
-                        },
-                        onMove: {
-                            Task {
-                                await viewModel.prepareMoveEvent()
-                            }
-                        },
-                        onReminderUpdate: {
-                            Task {
-                                await viewModel.prepareReminderUpdate()
+                                await viewModel.processVoiceCommand()
                             }
                         },
                         onOpenCalendar: {

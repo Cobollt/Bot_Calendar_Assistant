@@ -1,4 +1,7 @@
+import Foundation
+
 final class StartVoiceRecognitionUseCase {
+
     private let speechRecognizer: SpeechRecognizerProtocol
 
     init(speechRecognizer: SpeechRecognizerProtocol) {

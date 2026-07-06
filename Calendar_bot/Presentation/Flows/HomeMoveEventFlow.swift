@@ -2,16 +2,13 @@ import Foundation
 
 final class HomeMoveEventFlow {
 
-    private let startVoiceRecognitionUseCase: StartVoiceRecognitionUseCase
     private let findCalendarEventsUseCase: FindCalendarEventsUseCase
     private let parseVoiceCommandUseCase: ParseVoiceCommandUseCase
 
     init(
-        startVoiceRecognitionUseCase: StartVoiceRecognitionUseCase,
         findCalendarEventsUseCase: FindCalendarEventsUseCase,
         parseVoiceCommandUseCase: ParseVoiceCommandUseCase
     ) {
-        self.startVoiceRecognitionUseCase = startVoiceRecognitionUseCase
         self.findCalendarEventsUseCase = findCalendarEventsUseCase
         self.parseVoiceCommandUseCase = parseVoiceCommandUseCase
     }
