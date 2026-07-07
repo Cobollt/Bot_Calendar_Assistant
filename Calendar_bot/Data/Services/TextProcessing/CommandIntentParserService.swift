@@ -6,15 +6,14 @@ final class CommandIntentParserService {
         let normalizedText = normalize(text)
 
         let scores: [(intent: VoiceCommandIntent, score: Int)] = [
-            (.updateReminder, scoreUpdateReminder(normalizedText)),
             (.delete, scoreDelete(normalizedText)),
-            (.move, scoreMove(normalizedText)),
+            (.edit, scoreEdit(normalizedText)),
             (.create, scoreCreate(normalizedText))
         ]
 
-        let best = scores.max { $0.score < $1.score }
-
-        guard let best, best.score > 0 else {
+        guard let best = scores.max(by: { $0.score < $1.score }),
+              best.score > 0
+        else {
             return .unknown
         }
 
@@ -45,14 +44,16 @@ final class CommandIntentParserService {
                 "удалить",
                 "отмени",
                 "отменить",
-                "убери",
-                "убрать"
+                "убери событие",
+                "убрать событие",
+                "удали встречу",
+                "отмени встречу"
             ]
         )
     }
 
-    private func scoreMove(_ text: String) -> Int {
-        score(
+    private func scoreEdit(_ text: String) -> Int {
+        var result = score(
             text,
             keywords: [
                 "перенеси",
@@ -60,35 +61,33 @@ final class CommandIntentParserService {
                 "перемести",
                 "переместить",
                 "сдвинь",
-                "сдвинуть"
-            ]
-        )
-    }
-
-    private func scoreUpdateReminder(_ text: String) -> Int {
-        var result = score(
-            text,
-            keywords: [
-                "измени напоминание",
-                "изменить напоминание",
-                "поменяй напоминание",
-                "поменять напоминание",
-                "измени уведомление",
-                "изменить уведомление",
-                "поменяй уведомление",
-                "поменять уведомление"
+                "сдвинуть",
+                "измени",
+                "изменить",
+                "поменяй",
+                "поменять",
+                "переименуй",
+                "переименовать",
+                "назови",
+                "назвать",
+                "напоминание",
+                "уведомление",
+                "повторение"
             ]
         )
 
-        if text.contains("напоминание") || text.contains("уведомление") {
-            result += 1
+        if text.contains("на час позже") ||
+            text.contains("на час раньше") ||
+            text.contains("на 30 минут позже") ||
+            text.contains("на 30 минут раньше") {
+            result += 2
         }
 
-        if text.contains("за час") ||
+        if text.contains("без напоминания") ||
+            text.contains("за час") ||
             text.contains("за полчаса") ||
-            text.contains("за день") ||
-            text.contains("без напоминания") {
-            result += 1
+            text.contains("за день") {
+            result += 2
         }
 
         return result

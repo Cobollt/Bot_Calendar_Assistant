@@ -9,58 +9,44 @@ final class VoiceCommandFlow {
 
     private let createFlow: HomeCreateEventFlow
     private let deleteFlow: HomeDeleteEventFlow
-    private let moveFlow: HomeMoveEventFlow
-    private let reminderFlow: HomeReminderUpdateFlow
+    private let editFlow: HomeEditEventFlow
 
     init(
         startVoiceRecognitionUseCase: StartVoiceRecognitionUseCase,
-
         textNormalizer: TextNormalizerService,
         intentParser: CommandIntentParserService,
-
         createFlow: HomeCreateEventFlow,
         deleteFlow: HomeDeleteEventFlow,
-        moveFlow: HomeMoveEventFlow,
-        reminderFlow: HomeReminderUpdateFlow
+        editFlow: HomeEditEventFlow
     ) {
-
         self.startVoiceRecognitionUseCase = startVoiceRecognitionUseCase
-
         self.textNormalizer = textNormalizer
         self.intentParser = intentParser
-
         self.createFlow = createFlow
         self.deleteFlow = deleteFlow
-        self.moveFlow = moveFlow
-        self.reminderFlow = reminderFlow
+        self.editFlow = editFlow
     }
 
     func execute() async throws -> VoiceCommandFlowResult {
+        let command = try await startVoiceRecognitionUseCase.execute()
 
-        let command =
-            try await startVoiceRecognitionUseCase.execute()
-
-        let normalizedText =
-            textNormalizer.normalize(command.rawText)
+        let normalizedText = textNormalizer.normalize(command.rawText)
 
         let normalizedCommand = VoiceCommand(
             rawText: normalizedText,
             createdAt: command.createdAt
         )
 
-        let intent =
-            intentParser.parseIntent(
-                from: normalizedText
-            )
+        let intent = intentParser.parseIntent(
+            from: normalizedText
+        )
 
         switch intent {
 
         case .create:
-
-            let action =
-                try await createFlow.prepare(
-                    from: normalizedCommand
-                )
+            let action = try await createFlow.prepare(
+                from: normalizedCommand
+            )
 
             return .success(
                 recognizedText: normalizedText,
@@ -68,15 +54,12 @@ final class VoiceCommandFlow {
             )
 
         case .delete:
-
-            guard let action =
-                try await deleteFlow.prepare(
-                    from: normalizedCommand
-                )
-            else {
+            guard let action = try await deleteFlow.prepare(
+                from: normalizedCommand
+            ) else {
                 return .failure(
                     recognizedText: normalizedText,
-                    message: "Событие не найдено."
+                    message: "Событие для удаления не найдено."
                 )
             }
 
@@ -85,47 +68,14 @@ final class VoiceCommandFlow {
                 pendingAction: action
             )
 
-        case .move:
-
-            guard let action =
-                try await moveFlow.prepare(
-                    from: normalizedCommand
-                )
-            else {
+        case .edit:
+            guard let action = try await editFlow.prepare(
+                from: normalizedCommand
+            ) else {
                 return .failure(
                     recognizedText: normalizedText,
-                    message: "Событие не найдено."
+                    message: "Не удалось подготовить редактирование события."
                 )
-            }
-
-            return .success(
-                recognizedText: normalizedText,
-                pendingAction: action
-            )
-
-        case .updateReminder:
-
-            let result =
-                try await reminderFlow.prepare(
-                    from: normalizedCommand
-                )
-
-            if let message = result.1 {
-
-                return .failure(
-                    recognizedText: normalizedText,
-                    message: message
-                )
-
-            }
-
-            guard let action = result.0 else {
-
-                return .failure(
-                    recognizedText: normalizedText,
-                    message: "Событие не найдено."
-                )
-
             }
 
             return .success(
@@ -134,11 +84,14 @@ final class VoiceCommandFlow {
             )
 
         case .unknown:
-
             return .failure(
                 recognizedText: normalizedText,
                 message: "Не удалось определить команду."
             )
         }
+    }
+
+    func stop() {
+        startVoiceRecognitionUseCase.stop()
     }
 }

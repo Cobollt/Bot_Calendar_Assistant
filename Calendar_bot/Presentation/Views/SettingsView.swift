@@ -50,21 +50,27 @@ private extension SettingsView {
                 title: "Распознавание речи",
                 isGranted: viewModel.hasSpeechAccess
             )
-
+            
             Button {
                 Task {
-                    await viewModel.requestCalendarAccess()
+                    await viewModel.requestAllPermissions()
                 }
             } label: {
                 Text(
-                    viewModel.hasCalendarAccess
-                    ? "Доступ к календарю уже есть"
-                    : "Разрешить доступ к календарю"
+                    viewModel.hasCalendarAccess &&
+                    viewModel.hasMicrophoneAccess &&
+                    viewModel.hasSpeechAccess
+                    ? "Все разрешения уже есть"
+                    : "Разрешить доступы"
                 )
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .disabled(viewModel.hasCalendarAccess)
+            .disabled(
+                viewModel.hasCalendarAccess &&
+                viewModel.hasMicrophoneAccess &&
+                viewModel.hasSpeechAccess
+            )
 
             Button {
                 viewModel.openSettings()

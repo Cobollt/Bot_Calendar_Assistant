@@ -48,9 +48,10 @@ struct HomeView: View {
                     HomeActionButtonsView(
                         isProcessing: viewModel.isProcessing,
                         hasCalendarAccess: viewModel.hasCalendarAccess,
+                        isRecording: viewModel.isRecording,
                         onVoiceCommand: {
                             Task {
-                                await viewModel.processVoiceCommand()
+                                await viewModel.toggleRecording()
                             }
                         },
                         onOpenCalendar: {

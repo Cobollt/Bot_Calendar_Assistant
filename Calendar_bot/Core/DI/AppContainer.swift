@@ -18,6 +18,15 @@ final class AppContainer {
 
     lazy var calendarOpenerService =
         CalendarOpenerService()
+    
+    lazy var eventEditApplierService =
+        EventEditApplierService()
+    
+    lazy var eventEditRequestParserService =
+        EventEditRequestParserService(
+            dateParser: dateParserService,
+            recurrenceParser: recurrenceParserService
+        )
 
     // MARK: - Parsers
 
@@ -97,7 +106,12 @@ final class AppContainer {
         CheckPermissionsUseCase(
             permissionService: permissionService
         )
-
+    
+    lazy var requestAllPermissionsUseCase =
+        RequestAllPermissionsUseCase(
+            permissionService: permissionService
+        )
+    
     lazy var requestCalendarAccessUseCase =
         RequestCalendarAccessUseCase(
             permissionService: permissionService
@@ -164,16 +178,13 @@ final class AppContainer {
         HomeDeleteEventFlow(
             findCalendarEventsUseCase: findCalendarEventsUseCase
         )
-
-    lazy var homeMoveEventFlow =
-        HomeMoveEventFlow(
+    
+    lazy var homeEditEventFlow =
+        HomeEditEventFlow(
             findCalendarEventsUseCase: findCalendarEventsUseCase,
-            parseVoiceCommandUseCase: parseVoiceCommandUseCase
-        )
-
-    lazy var homeReminderUpdateFlow =
-        HomeReminderUpdateFlow(
-            findCalendarEventsUseCase: findCalendarEventsUseCase
+            settingsService: settingsService,
+            editRequestParser: eventEditRequestParserService,
+            editApplier: eventEditApplierService
         )
     
     lazy var voiceCommandFlow =
@@ -183,8 +194,7 @@ final class AppContainer {
             intentParser: commandIntentParserService,
             createFlow: homeCreateEventFlow,
             deleteFlow: homeDeleteEventFlow,
-            moveFlow: homeMoveEventFlow,
-            reminderFlow: homeReminderUpdateFlow
+            editFlow: homeEditEventFlow
         )
 
     // MARK: - ViewModels
@@ -204,6 +214,7 @@ final class AppContainer {
         SettingsViewModel(
             checkPermissionsUseCase: checkPermissionsUseCase,
             requestCalendarAccessUseCase: requestCalendarAccessUseCase,
+            requestAllPermissionsUseCase: requestAllPermissionsUseCase,
             getAppSettingsUseCase: getAppSettingsUseCase,
             saveAppSettingsUseCase: saveAppSettingsUseCase,
             openSettingsUseCase: openSettingsUseCase

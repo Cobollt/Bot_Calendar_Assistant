@@ -17,23 +17,23 @@ final class SettingsViewModel: ObservableObject {
     private let requestCalendarAccessUseCase: RequestCalendarAccessUseCase
     private let getAppSettingsUseCase: GetAppSettingsUseCase
     private let saveAppSettingsUseCase: SaveAppSettingsUseCase
-    private let openSettingsUseCase:
-    OpenSettingsUseCase
+    private let openSettingsUseCase: OpenSettingsUseCase
+    private let requestAllPermissionsUseCase: RequestAllPermissionsUseCase
 
     init(
         checkPermissionsUseCase: CheckPermissionsUseCase,
         requestCalendarAccessUseCase: RequestCalendarAccessUseCase,
+        requestAllPermissionsUseCase: RequestAllPermissionsUseCase,
         getAppSettingsUseCase: GetAppSettingsUseCase,
         saveAppSettingsUseCase: SaveAppSettingsUseCase,
-        openSettingsUseCase:
-        OpenSettingsUseCase
+        openSettingsUseCase: OpenSettingsUseCase
     ) {
         self.checkPermissionsUseCase = checkPermissionsUseCase
         self.requestCalendarAccessUseCase = requestCalendarAccessUseCase
+        self.requestAllPermissionsUseCase = requestAllPermissionsUseCase
         self.getAppSettingsUseCase = getAppSettingsUseCase
         self.saveAppSettingsUseCase = saveAppSettingsUseCase
-        self.openSettingsUseCase =
-        openSettingsUseCase
+        self.openSettingsUseCase = openSettingsUseCase
 
         refreshPermissions()
         loadSettings()
@@ -45,6 +45,21 @@ final class SettingsViewModel: ObservableObject {
         hasCalendarAccess = permissions.hasCalendarAccess
         hasMicrophoneAccess = permissions.hasMicrophoneAccess
         hasSpeechAccess = permissions.hasSpeechAccess
+    }
+    
+    func requestAllPermissions() async {
+        do {
+            let permissions = try await requestAllPermissionsUseCase.execute()
+
+            hasCalendarAccess = permissions.hasCalendarAccess
+            hasMicrophoneAccess = permissions.hasMicrophoneAccess
+            hasSpeechAccess = permissions.hasSpeechAccess
+
+            statusMessage = "Разрешения обновлены"
+        } catch {
+            statusMessage = "Не удалось получить все разрешения"
+            refreshPermissions()
+        }
     }
 
     func requestCalendarAccess() async {

@@ -2,6 +2,7 @@ import Foundation
 import EventKit
 import Speech
 import AVFoundation
+import UserNotifications
 
 final class PermissionService: PermissionServiceProtocol {
 
@@ -12,6 +13,37 @@ final class PermissionService: PermissionServiceProtocol {
             hasCalendarAccess: hasCalendarAccess(),
             hasMicrophoneAccess: hasMicrophoneAccess(),
             hasSpeechAccess: hasSpeechAccess()
+        )
+    }
+    
+    func requestAllPermissions() async throws -> PermissionState {
+        _ = try await requestCalendarAccess()
+        _ = await requestMicrophoneAccess()
+        _ = await requestSpeechAccess()
+        _ = try? await requestNotificationAccess()
+
+        return checkPermissions()
+    }
+    
+    private func requestMicrophoneAccess() async -> Bool {
+        await withCheckedContinuation { continuation in
+            AVAudioApplication.requestRecordPermission { granted in
+                continuation.resume(returning: granted)
+            }
+        }
+    }
+
+    private func requestSpeechAccess() async -> Bool {
+        await withCheckedContinuation { continuation in
+            SFSpeechRecognizer.requestAuthorization { status in
+                continuation.resume(returning: status == .authorized)
+            }
+        }
+    }
+
+    private func requestNotificationAccess() async throws -> Bool {
+        try await UNUserNotificationCenter.current().requestAuthorization(
+            options: [.alert, .badge, .sound]
         )
     }
 

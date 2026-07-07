@@ -4,6 +4,7 @@ struct HomeActionButtonsView: View {
 
     let isProcessing: Bool
     let hasCalendarAccess: Bool
+    let isRecording: Bool
 
     let onVoiceCommand: () -> Void
     let onOpenCalendar: () -> Void
@@ -13,11 +14,11 @@ struct HomeActionButtonsView: View {
             Button {
                 onVoiceCommand()
             } label: {
-                Text(isProcessing ? "Слушаю..." : "Начать голосовой ввод")
+                Text(isRecording ? "Стоп" : "Начать голосовой ввод")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .disabled(isProcessing || !hasCalendarAccess)
+            .disabled(!hasCalendarAccess)
 
             Button {
                 onOpenCalendar()

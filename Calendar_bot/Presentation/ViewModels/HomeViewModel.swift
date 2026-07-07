@@ -9,6 +9,7 @@ final class HomeViewModel: ObservableObject {
     @Published var isProcessing = false
     @Published var hasCalendarAccess = false
     @Published var pendingAction: HomePendingAction = .none
+    @Published var isRecording = false
 
     private let checkPermissionsUseCase: CheckPermissionsUseCase
     private let createCalendarEventUseCase: CreateCalendarEventUseCase
@@ -43,6 +44,21 @@ final class HomeViewModel: ObservableObject {
     func openCalendar() {
         openCalendarUseCase.execute()
     }
+    
+    func toggleRecording() async {
+        if isRecording {
+            stopRecording()
+        } else {
+            await processVoiceCommand()
+        }
+    }
+
+    private func stopRecording() {
+        voiceCommandFlow.stop()
+        isRecording = false
+        isProcessing = false
+        statusMessage = "Запись остановлена"
+    }
 
     func processVoiceCommand() async {
         refreshPermissions()
@@ -51,9 +67,13 @@ final class HomeViewModel: ObservableObject {
             statusMessage = "Сначала разрешите доступ к календарю в настройках."
             return
         }
-
+        
+        isRecording = true
         isProcessing = true
-        defer { isProcessing = false }
+        defer {
+            isProcessing = false
+            isRecording = false
+        }
 
         do {
             clearPendingAction()
