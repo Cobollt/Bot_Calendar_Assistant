@@ -111,11 +111,6 @@ final class AppContainer {
         RequestAllPermissionsUseCase(
             permissionService: permissionService
         )
-    
-    lazy var requestCalendarAccessUseCase =
-        RequestCalendarAccessUseCase(
-            permissionService: permissionService
-        )
 
     lazy var getAppSettingsUseCase =
         GetAppSettingsUseCase(
@@ -213,7 +208,6 @@ final class AppContainer {
     func makeSettingsViewModel() -> SettingsViewModel {
         SettingsViewModel(
             checkPermissionsUseCase: checkPermissionsUseCase,
-            requestCalendarAccessUseCase: requestCalendarAccessUseCase,
             requestAllPermissionsUseCase: requestAllPermissionsUseCase,
             getAppSettingsUseCase: getAppSettingsUseCase,
             saveAppSettingsUseCase: saveAppSettingsUseCase,

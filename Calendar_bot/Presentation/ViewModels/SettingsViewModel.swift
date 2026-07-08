@@ -14,7 +14,6 @@ final class SettingsViewModel: ObservableObject {
     @Published var defaultEventHour = 9
 
     private let checkPermissionsUseCase: CheckPermissionsUseCase
-    private let requestCalendarAccessUseCase: RequestCalendarAccessUseCase
     private let getAppSettingsUseCase: GetAppSettingsUseCase
     private let saveAppSettingsUseCase: SaveAppSettingsUseCase
     private let openSettingsUseCase: OpenSettingsUseCase
@@ -22,14 +21,12 @@ final class SettingsViewModel: ObservableObject {
 
     init(
         checkPermissionsUseCase: CheckPermissionsUseCase,
-        requestCalendarAccessUseCase: RequestCalendarAccessUseCase,
         requestAllPermissionsUseCase: RequestAllPermissionsUseCase,
         getAppSettingsUseCase: GetAppSettingsUseCase,
         saveAppSettingsUseCase: SaveAppSettingsUseCase,
         openSettingsUseCase: OpenSettingsUseCase
     ) {
         self.checkPermissionsUseCase = checkPermissionsUseCase
-        self.requestCalendarAccessUseCase = requestCalendarAccessUseCase
         self.requestAllPermissionsUseCase = requestAllPermissionsUseCase
         self.getAppSettingsUseCase = getAppSettingsUseCase
         self.saveAppSettingsUseCase = saveAppSettingsUseCase
@@ -59,22 +56,6 @@ final class SettingsViewModel: ObservableObject {
         } catch {
             statusMessage = "Не удалось получить все разрешения"
             refreshPermissions()
-        }
-    }
-
-    func requestCalendarAccess() async {
-        do {
-            let granted = try await requestCalendarAccessUseCase.execute()
-
-            hasCalendarAccess = granted
-            statusMessage = granted
-                ? "Доступ к календарю получен"
-                : "Доступ к календарю запрещён"
-
-            refreshPermissions()
-        } catch {
-            hasCalendarAccess = false
-            statusMessage = "Не удалось получить доступ к календарю"
         }
     }
     
