@@ -240,10 +240,10 @@ final class DateParserService {
 
     private func extractDayOnlyDate(from text: String) -> Date? {
         let patterns = [
-            #"(?i)\b(\d{1,2})\s+числа\b"#,
-            #"(?i)\b(\d{1,2})\s+число\b"#
+            #"(?i)\b(\d{1,2})[-\s]?(?:го|ого)\s+(?:числа|число)\b"#,
+            #"(?i)\b(\d{1,2})[-\s]?(?:го|ого)\b"#,
+            #"(?i)\b(\d{1,2})\s+(?:числа|число)\b"#
         ]
-
         for pattern in patterns {
             guard let regex = try? NSRegularExpression(pattern: pattern),
                   let match = regex.firstMatch(

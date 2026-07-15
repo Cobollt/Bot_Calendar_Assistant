@@ -6,6 +6,9 @@ final class EventDateTextCleaner {
         var result = text
 
         let patterns = [
+            #"(?i)\b\d{1,2}[-\s]?(?:го|ого)\b"#,
+            #"(?i)\b\d{1,2}[-\s]?(?:го|ого)\s+(?:числа|число)\b"#,
+            
             #"(?i)\bсегодня\b"#,
             #"(?i)\bзавтра\b"#,
             #"(?i)\bпослезавтра\b"#,
